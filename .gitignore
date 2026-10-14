@@ -1,0 +1,5 @@
+out/parts/
+out/stills/
+out/video_noaudio.mp4
+node_modules/
+__pycache__/
