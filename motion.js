@@ -284,17 +284,10 @@ function background(t) {
 }
 
 /* ---------- HUD ---------- */
-const CHAPTERS = [['HOOK', 6, 12], ['JURY', 12, 22], ['STAKE', 22, 32], ['MATH', 32, 42], ['RISK', 42, 46], ['MY PLAN', 46, 78], ['VOTE', 78, 88]];
 function hud(t) {
   const a = E.outCubic(seg(t, 5.0, 5.6)) * (1 - seg(t, 86.6, 87.6));
   if (a <= 0) return;
   X.save(); X.globalAlpha = a;
-  // corner brackets
-  X.strokeStyle = 'rgba(255,135,255,0.55)'; X.lineWidth = 2;
-  const m = 26, L = 34;
-  for (const [x, y, sx, sy] of [[m, m, 1, 1], [W - m, m, -1, 1], [m, H - m, 1, -1], [W - m, H - m, -1, -1]]) {
-    X.beginPath(); X.moveTo(x, y + sy * L); X.lineTo(x, y); X.lineTo(x + sx * L, y); X.stroke();
-  }
   if (t >= 5.3) logo(80, 70, 38, { glow: 14 + 14 * beatPulse(t) });
   const gw = text('GENLAYER', 112, 81, { fam: F.ub, wt: 700, size: 22, ls: 5, align: 'left' });
   text('//  STAKING, DECODED', 112 + gw + 22, 80, { fam: F.mono, wt: 500, size: 16, ls: 3, align: 'left', color: 'rgba(255,135,255,0.75)' });
@@ -303,17 +296,6 @@ function hud(t) {
   text('@GenLayer', W - 64, 80, { fam: F.mono, wt: 700, size: 20, ls: 2, align: 'right', color: C.pink });
   text(`EPOCH ${ep}`, W - 230, 80, { fam: F.mono, wt: 500, size: 16, ls: 3, align: 'right', color: 'rgba(255,255,255,0.6)' });
   dot(W - 395, 74, 5, C.mint, 12, Math.floor(t * 2) % 2 ? 1 : 0.25);
-  // chapters
-  const x0 = 170, x1 = W - 170, gap = 14, n = CHAPTERS.length, sw = (x1 - x0 - gap * (n - 1)) / n, y = 1034;
-  CHAPTERS.forEach(([name, s, e], i) => {
-    const x = x0 + i * (sw + gap), p = seg(t, s, e), on = t >= s && t < e;
-    X.fillStyle = 'rgba(255,255,255,0.12)'; X.fillRect(x, y, sw, 3);
-    if (p > 0) {
-      X.save(); X.fillStyle = on ? C.pink : 'rgba(255,135,255,0.55)'; if (on) { X.shadowColor = C.pink; X.shadowBlur = 12; }
-      X.fillRect(x, y, sw * p, 3); X.restore();
-    }
-    text(name, x, y - 12, { fam: F.mono, wt: 700, size: 13, ls: 4, align: 'left', color: on ? C.pink : p >= 1 ? 'rgba(255,135,255,0.55)' : 'rgba(255,255,255,0.3)' });
-  });
   X.restore();
 }
 

@@ -1,6 +1,6 @@
 # GenLayer Staking — Motion Graphic
 
-88-second, 1920×1080 @ 60fps motion graphic for an X/Twitter post about staking and delegating on GenLayer.
+88-second, 1920×1080 @ 60fps (H.264 + AAC, ~48 MB) motion graphic for an X/Twitter post about staking and delegating on GenLayer.
 It uses the project logo and the `#ff87ff` / `#dc00ff` palette, with cyan, violet, mint and red accents.
 
 **Final video:** `out/genlayer-staking.mp4`
