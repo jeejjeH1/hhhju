@@ -42,4 +42,15 @@ object Security {
     }
 
     fun hostOf(url: String): String = runCatching { URI(url).host ?: "" }.getOrDefault("")
+
+    /** لینک یا نام افزونه‌ی AMO → آدرس xpi امضاشده. فقط addons.mozilla.org پذیرفته می‌شود. */
+    fun amoXpiUrl(input: String): String? {
+        val t = input.trim()
+        Regex("""^https://addons\.mozilla\.org/[^?#]*?/addon/([\w.@-]+)""").find(t)?.let {
+            return "https://addons.mozilla.org/firefox/downloads/latest/${it.groupValues[1]}/latest.xpi"
+        }
+        if (t.startsWith("https://addons.mozilla.org/") && t.substringBefore('?').endsWith(".xpi")) return t
+        if (Regex("""^[\w.@-]{2,60}$""").matches(t)) return "https://addons.mozilla.org/firefox/downloads/latest/$t/latest.xpi"
+        return null
+    }
 }

@@ -14,4 +14,10 @@ class SecurityTest {
     @Test fun blankRejected() = assertEquals("", Security.resolveInput("   ", "google"))
     @Test fun dangerousFiles() { assertTrue(Security.isDangerousFile("a.APK")); assertFalse(Security.isDangerousFile("a.jpg")) }
     @Test fun safeUrls() { assertTrue(Security.isSafeNavigationUrl("https://a.b")); assertFalse(Security.isSafeNavigationUrl("intent://x")); assertFalse(Security.isSafeNavigationUrl("javascript:1")) }
+    @Test fun amoLinks() {
+        assertEquals("https://addons.mozilla.org/firefox/downloads/latest/ublock-origin/latest.xpi", Security.amoXpiUrl("https://addons.mozilla.org/en-US/firefox/addon/ublock-origin/"))
+        assertEquals("https://addons.mozilla.org/firefox/downloads/latest/darkreader/latest.xpi", Security.amoXpiUrl("darkreader"))
+        assertNull(Security.amoXpiUrl("https://evil.example/x.xpi"))
+        assertNull(Security.amoXpiUrl("http://addons.mozilla.org/en/firefox/addon/x/"))
+    }
 }
