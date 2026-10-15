@@ -10,8 +10,7 @@ jobs:
       - run: |
           V=158.0.20261007201254
           curl -sL -o g.aar https://maven.mozilla.org/maven2/org/mozilla/geckoview/geckoview-arm64-v8a/$V/geckoview-arm64-v8a-$V.aar
-          mkdir a && cd a && unzip -q ../g.aar 'assets/*' || true; ls assets | head
-          mkdir o && cd o && unzip -q ../assets/omni.ja 2>/dev/null || true
-          grep -rhoE 'MOZ_REQUIRE_SIGNING[^,;]{0,40}|MOZ_UPDATE_CHANNEL[^,;]{0,40}|MOZ_DEV_EDITION[^,;]{0,30}' modules/AppConstants.sys.mjs || echo noappconst
-          grep -rhoE 'xpinstall.signatures.required[^)]{0,40}' greprefs.js defaults 2>/dev/null | head -5 || true
+          mkdir x && cd x && unzip -q ../g.aar classes.jar
+          for c in org.mozilla.geckoview.GeckoPreferenceController 'org.mozilla.geckoview.GeckoPreferenceController$SetGeckoPreference' 'org.mozilla.geckoview.GeckoPreferenceController$GetGeckoPreference' ; do echo "== $c"; javap -cp classes.jar "$c" 2>&1 | grep -E "class|public|static" | cut -c1-210 | head -25; done
+          echo "== config"; javap -p -cp classes.jar org.mozilla.geckoview.GeckoRuntime | grep -iE "config|yaml" | cut -c1-200; unzip -p classes.jar org/mozilla/geckoview/GeckoRuntime.class | strings | grep -iE "geckoview-config|configFile|yaml|prefs" | head
           true
