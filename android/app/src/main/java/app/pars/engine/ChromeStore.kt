@@ -84,7 +84,8 @@ object ChromeStore {
             }
         }
         val raw = files["manifest.json"] ?: throw IllegalArgumentException("manifest.json پیدا نشد")
-        files["manifest.json"] = fixManifest(String(raw, Charsets.UTF_8).removePrefix("﻿"), id).toByteArray(Charsets.UTF_8)
+        val fixed = fixManifest(String(raw, Charsets.UTF_8).removePrefix("\uFEFF"), id)
+        files["manifest.json"] = fixed.toByteArray(Charsets.UTF_8)
         val out = ByteArrayOutputStream()
         ZipOutputStream(out).use { z ->
             val order = listOf("manifest.json") + files.keys.filter { it != "manifest.json" }
