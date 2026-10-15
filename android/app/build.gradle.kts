@@ -22,10 +22,11 @@ android {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
-    kotlinOptions { jvmTarget = "17" }
     buildFeatures { compose = true }
     packaging { jniLibs.useLegacyPackaging = true }   // GeckoView بارگذاری کتابخانه‌های native را از APK نیاز دارد
 }
+
+kotlin { compilerOptions { jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17) } }
 
 dependencies {
     implementation("org.mozilla.geckoview:geckoview-arm64-v8a:158.0.20261007201254")
