@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Seismic Privacy Motion</title>
+<style>
+  @font-face { font-family: "ID"; src: url(assets/fonts/InterDisplay-Regular.otf); font-weight: 400; }
+  @font-face { font-family: "ID"; src: url(assets/fonts/InterDisplay-Medium.otf); font-weight: 500; }
+  @font-face { font-family: "ID"; src: url(assets/fonts/InterDisplay-SemiBold.otf); font-weight: 600; }
+  @font-face { font-family: "ID"; src: url(assets/fonts/InterDisplay-Bold.otf); font-weight: 700; }
+  @font-face { font-family: "JBM"; src: url(assets/fonts/JetBrainsMono-500.ttf); font-weight: 500; }
+  @font-face { font-family: "JBM"; src: url(assets/fonts/JetBrainsMono-700.ttf); font-weight: 700; }
+  html, body { margin: 0; height: 100%; background: #161616; overflow: hidden; }
+  body { display: flex; align-items: center; justify-content: center; }
+  canvas { display: block; max-width: 100vw; max-height: 100vh; aspect-ratio: 16 / 9; }
+  #hint { position: fixed; bottom: 12px; left: 0; right: 0; text-align: center; color: #A4A3A1;
+          font: 500 13px JBM, monospace; letter-spacing: 2px; opacity: .8; }
+</style>
+</head>
+<body>
+<canvas id="c" width="1920" height="1080"></canvas>
+<div id="hint">CLICK TO PLAY WITH SOUND · SPACE = PAUSE · ←/→ = SEEK</div>
+<script src="motion.js"></script>
+</body>
+</html>
