@@ -1,0 +1,19 @@
+name: probe
+on:
+  push:
+    branches: [claude/secure-browser-extension-support-gqv56o]
+    paths: ['.github/workflows/probe.yml']
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          V=158.0.20261007201254
+          curl -sL -o g.aar https://maven.mozilla.org/maven2/org/mozilla/geckoview/geckoview-arm64-v8a/$V/geckoview-arm64-v8a-$V.aar
+          mkdir x && cd x && unzip -q ../g.aar classes.jar
+          echo "== MetaData"; javap -cp classes.jar 'org.mozilla.geckoview.WebExtension$MetaData' | grep -iE "url|option|base|uuid" | cut -c1-200
+          echo "== WebExtension"; javap -cp classes.jar org.mozilla.geckoview.WebExtension | grep -iE "url|option|base|uuid|tabDelegate|setTab" | cut -c1-200
+          echo "== Controller"; javap -cp classes.jar org.mozilla.geckoview.WebExtensionController | grep -iE "option|TabDelegate" | cut -c1-200
+          echo "== Pref consts"; javap -constants -cp classes.jar org.mozilla.geckoview.GeckoPreferenceController | grep -E "PREF_BRANCH" | cut -c1-160
+          echo "== Action"; javap -cp classes.jar 'org.mozilla.geckoview.WebExtension$Action' | grep -iE "popup|click" | cut -c1-200
+          true
