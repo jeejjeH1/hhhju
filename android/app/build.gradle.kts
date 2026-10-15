@@ -6,7 +6,7 @@ plugins {
 
 android {
     namespace = "app.pars"
-    compileSdk = 35
+    compileSdk = 36
     defaultConfig {
         applicationId = "app.pars.browser"
         minSdk = 26
