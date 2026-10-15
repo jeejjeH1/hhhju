@@ -24,7 +24,7 @@ class Tab(val id: Int, val priv: Boolean, val session: GeckoSession) {
 }
 
 class PermRequest(val origin: String, val kind: String, val answer: (Boolean) -> Unit)
-class InstallRequest(val name: String, val perms: List<String>, val origins: List<String>, val answer: (Boolean) -> Unit)
+class InstallRequest(val name: String, val perms: List<String>, val origins: List<String>, val unverified: Boolean, val answer: (Boolean) -> Unit)
 class DownloadRequest(val name: String, val uri: String, val risky: Boolean)
 class ExtInfo(val ext: WebExtension, val action: WebExtension.Action?) {
     val id get() = ext.id
@@ -54,6 +54,8 @@ class Browser(private val app: Context) {
     var requestAndroidPerms: ((Array<String>, (Boolean) -> Unit) -> Unit)? = null
 
     private var nextId = 1
+    private var unverifiedNext = false
+    private val ui = android.os.Handler(android.os.Looper.getMainLooper())
     val active: Tab? get() = tabs.firstOrNull { it.id == activeId }
 
     init {
@@ -222,7 +224,7 @@ class Browser(private val app: Context) {
                 extension: WebExtension, permissions: Array<out String>, origins: Array<out String>, dataCollectionPermissions: Array<out String>,
             ): GeckoResult<WebExtension.PermissionPromptResponse>? {
                 val r = GeckoResult<WebExtension.PermissionPromptResponse>()
-                installRequest = InstallRequest(extension.metaData.name ?: extension.id, permissions.toList(), origins.toList()) { ok ->
+                installRequest = InstallRequest(extension.metaData.name ?: extension.id, permissions.toList(), origins.toList(), unverifiedNext) { ok ->
                     installRequest = null
                     // حالت خصوصی و جمع‌آوری داده‌ی فنی همیشه رد می‌شود
                     r.complete(WebExtension.PermissionPromptResponse(ok, false, false))
@@ -258,7 +260,8 @@ class Browser(private val app: Context) {
     }
 
     fun installExtension(input: String) {
-        // افزونه‌های Chrome Web Store روی موتور Firefox نصب نمی‌شوند؛ معادلش را در AMO پیدا می‌کنیم.
+        ChromeStore.parseId(input)?.let { installFromChromeStore(it); return }
+        // لینک کروم‌استور بدون شناسه (فقط نام) → معادلش را در AMO جستجو می‌کنیم.
         Security.chromeStoreName(input)?.let { name ->
             extStatus = "این لینک مال Chrome Store است و روی این مرورگر نصب نمی‌شود. معادل Firefox آن را در یک تب جدید جستجو کردم؛ نام افزونه‌ی AMO را همین‌جا بنویس و «نصب» بزن."
             newTab(Security.amoSearchUrl(name.ifBlank { "extensions" }))
@@ -270,6 +273,29 @@ class Browser(private val app: Context) {
         runtime.webExtensionController.install(url).accept({ ext ->
             extStatus = "«${ext?.metaData?.name}» نصب شد."; refreshExtensions()
         }, { e -> extStatus = if (e?.message?.contains("USER_CANCELED") == true) "" else "نصب نشد: ${e?.message ?: "خطا"}" })
+    }
+
+    /** Chrome Web Store → تبدیل به xpi → نصب (با اجازه‌ی کاربر). بدون امضای Mozilla؛ سازگاری کامل تضمین نیست. */
+    private fun installFromChromeStore(id: String) {
+        extStatus = "در حال دریافت از Chrome Store…"
+        Thread {
+            try {
+                val xpi = ChromeStore.convert(ChromeStore.crxToZip(ChromeStore.download(id)), id)
+                val f = java.io.File(app.cacheDir, "cws-$id.xpi").also { it.writeBytes(xpi) }
+                ui.post {
+                    GeckoPreferenceController.setGeckoPref("xpinstall.signatures.required", false, GeckoPreferenceController.PREF_BRANCH_USER)
+                        .accept({
+                            unverifiedNext = true
+                            runtime.webExtensionController.install("file://" + f.absolutePath).accept({ ext ->
+                                unverifiedNext = false; f.delete()
+                                extStatus = "«${ext?.metaData?.name}» نصب شد. (بعضی افزونه‌های کروم ممکن است کامل کار نکنند)"; refreshExtensions()
+                            }, { e -> unverifiedNext = false; f.delete(); extStatus = if (e?.message?.contains("USER_CANCELED") == true) "" else "نصب نشد: ${e?.message ?: "خطا"}" })
+                        }, { extStatus = "تنظیم نصب افزونه‌ی بررسی‌نشده ممکن نشد." })
+                }
+            } catch (e: Exception) {
+                ui.post { extStatus = "دریافت/تبدیل ناموفق: ${e.message ?: "خطا"}" }
+            }
+        }.start()
     }
 
     fun removeExtension(e: ExtInfo) {

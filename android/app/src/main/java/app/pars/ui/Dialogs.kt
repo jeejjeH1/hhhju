@@ -56,6 +56,7 @@ fun Dialogs(b: Browser) {
                             if (all) add("⚠️ ${Str.allSites}") else if (inst.origins.isNotEmpty()) add("دسترسی به ${inst.origins.size} سایت")
                             inst.perms.forEach { add(Str.extPerm(it)) }
                         }
+                        if (inst.unverified) Text("⚠️ این افزونه از Chrome Store است و توسط Mozilla بررسی/امضا نشده. فقط اگر به سازنده‌اش اعتماد داری نصب کن؛ ممکن است کامل کار نکند.", color = C.Amber, fontSize = 12.sp)
                         Text(if (lines.isEmpty()) "مجوز ویژه‌ای نمی‌خواهد." else lines.joinToString("\n") { "• $it" }, color = C.Muted, fontSize = 13.sp)
                         Buttons(Str.cancel, Str.install, accent, { inst.answer(false) }, { inst.answer(true) })
                     }

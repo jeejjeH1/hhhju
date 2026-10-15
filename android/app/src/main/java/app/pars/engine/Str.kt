@@ -21,7 +21,7 @@ object Str {
     const val noBookmarks = "هنوز نشانی ذخیره نکرده‌ای؛ ستاره را بزن."
     const val noHistory = "تاریخچه خالی است."
     const val noExt = "اکستنشنی نصب نیست."
-    const val installHint = "لینک یا نام افزونه در addons.mozilla.org"
+    const val installHint = "لینک Chrome Store یا addons.mozilla.org"
     const val clearData = "پاک کردن اطلاعات مرور"
     const val clearHistory = "پاک کردن تاریخچه"
     const val searchEngine = "موتور جستجو"
