@@ -4,11 +4,9 @@ import android.app.Application
 import app.pars.engine.Browser
 
 class ParsApp : Application() {
-    lateinit var browser: Browser
-        private set
-
-    override fun onCreate() {
-        super.onCreate()
-        browser = Browser(this)
-    }
+    /**
+     * GeckoView پردازه‌های فرزند (محتوا/GPU/…) را با همین کلاس Application اجرا می‌کند؛
+     * ساختن GeckoRuntime در آن‌ها کرش می‌دهد. پس فقط وقتی UI اصلی بخواهد ساخته می‌شود (lazy).
+     */
+    val browser: Browser by lazy { Browser(this) }
 }
