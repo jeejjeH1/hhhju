@@ -1,0 +1,15 @@
+name: probe
+on:
+  push:
+    branches: [claude/secure-browser-extension-support-gqv56o]
+    paths: ['.github/workflows/probe.yml']
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          echo "== geckoview"; curl -s https://maven.mozilla.org/maven2/org/mozilla/geckoview/geckoview-arm64-v8a/maven-metadata.xml | grep -E "<release>|<latest>"
+          echo "== agp"; curl -s https://maven.google.com/com/android/tools/build/gradle/maven-metadata.xml | grep -E "<release>"
+          echo "== compose bom"; curl -s https://maven.google.com/androidx/compose/compose-bom/maven-metadata.xml | tail -8
+          echo "== kotlin"; curl -s https://repo.maven.apache.org/maven2/org/jetbrains/kotlin/kotlin-gradle-plugin/maven-metadata.xml | grep -E "<release>"
+          java -version 2>&1; gradle -v | head -4; echo ANDROID_HOME=$ANDROID_HOME; ls $ANDROID_HOME/platforms $ANDROID_HOME/build-tools
