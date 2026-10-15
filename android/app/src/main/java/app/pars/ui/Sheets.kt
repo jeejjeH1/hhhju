@@ -57,6 +57,7 @@ fun Sheets(b: Browser, panel: Panel, onPanel: (Panel) -> Unit) {
                     Panel.History -> HistoryPanel(b, onPanel)
                     Panel.Extensions -> ExtensionsPanel(b, onPanel)
                     Panel.Settings -> SettingsPanel(b, onPanel)
+                    Panel.Look -> AppearancePanel(b, onPanel)
                     Panel.None -> {}
                 }
             }
@@ -79,6 +80,8 @@ private fun MenuPanel(b: Browser, go: (Panel) -> Unit) {
         Triple(G.Star, Str.bookmarks, C.Amber) to { go(Panel.Bookmarks) },
         Triple(G.Clock, Str.history, C.Magenta) to { go(Panel.History) },
         Triple(G.Puzzle, Str.extensions, C.Violet) to { go(Panel.Extensions) },
+        Triple(G.Palette, "ظاهر", C.Magenta) to { go(Panel.Look) },
+        Triple(G.Monitor, if (b.active?.desktop == true) "نسخه‌ی موبایل" else "نسخه‌ی دسکتاپ", C.Cyan) to { b.toggleDesktop(); go(Panel.None) },
         Triple(G.Gear, Str.settings, C.Mint) to { go(Panel.Settings) },
         Triple(G.Plus, Str.newTab, C.Magenta) to { b.newTab(); go(Panel.None) },
     )
@@ -92,7 +95,7 @@ private fun MenuPanel(b: Browser, go: (Panel) -> Unit) {
                     LaunchedEffect(Unit) { delay((r * 3 + c) * 55L); on = true }
                     val p by animateFloatAsState(if (on) 1f else 0f, spring(.55f, 380f), label = "m")
                     Column(
-                        Modifier.weight(1f).graphicsLayer { scaleX = p; scaleY = p; alpha = p }.clip(RoundedCornerShape(20.dp)).background(color.copy(alpha = .10f)).border(1.dp, color.copy(alpha = .30f), RoundedCornerShape(20.dp))
+                        Modifier.weight(1f).graphicsLayer { scaleX = p; scaleY = p; alpha = p }.clip(Rd(20f)).background(color.copy(alpha = .10f)).border(1.dp, color.copy(alpha = .30f), Rd(20f))
                             .clickable { act() }.padding(vertical = 18.dp),
                         horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp),
                     ) {
@@ -140,7 +143,7 @@ private fun HistoryPanel(b: Browser, go: (Panel) -> Unit) {
 
 @Composable
 private fun TextButton(label: String, color: Color, onClick: () -> Unit) {
-    Text(label, color = color, fontSize = 13.sp, modifier = Modifier.padding(horizontal = 20.dp, vertical = 4.dp).clip(RoundedCornerShape(10.dp)).clickable(onClick = onClick).padding(8.dp))
+    Text(label, color = color, fontSize = 13.sp, modifier = Modifier.padding(horizontal = 20.dp, vertical = 4.dp).clip(Rd(10f)).clickable(onClick = onClick).padding(8.dp))
 }
 
 @Composable
@@ -148,7 +151,7 @@ private fun ExtensionsPanel(b: Browser, go: (Panel) -> Unit) {
     var input by remember { mutableStateOf("") }
     Header(Str.extensions) { go(Panel.Menu) }
     Row(
-        Modifier.fillMaxWidth().padding(horizontal = 16.dp).height(48.dp).clip(RoundedCornerShape(24.dp)).background(C.Surface2).border(1.dp, C.Line, RoundedCornerShape(24.dp)).padding(horizontal = 16.dp),
+        Modifier.fillMaxWidth().padding(horizontal = 16.dp).height(48.dp).clip(Rd(24f)).background(C.Surface2).border(1.dp, C.Line, Rd(24f)).padding(horizontal = 16.dp),
         verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         Box(Modifier.weight(1f)) {
@@ -159,7 +162,7 @@ private fun ExtensionsPanel(b: Browser, go: (Panel) -> Unit) {
         Text(Str.install, color = C.Bg, fontSize = 13.sp, modifier = Modifier.clip(CircleShape).background(C.Neon).clickable { b.installExtension(input) }.padding(horizontal = 14.dp, vertical = 6.dp))
     }
     Text("فقط ذخیره‌ی فایل افزونه (CRX / XPI) در Downloads/Pars", color = C.Cyan, fontSize = 12.sp,
-        modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp).clip(RoundedCornerShape(10.dp)).clickable { b.saveExtensionFile(input) }.padding(8.dp))
+        modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp).clip(Rd(10f)).clickable { b.saveExtensionFile(input) }.padding(8.dp))
     Text("پرطرفدار (نصب با یک لمس)", color = C.Muted, fontSize = 11.sp, modifier = Modifier.padding(start = 24.dp, top = 12.dp, bottom = 6.dp))
     Row(Modifier.horizontalScroll(rememberScrollState()).padding(horizontal = 16.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         listOf(

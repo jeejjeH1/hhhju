@@ -18,7 +18,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.platform.LocalLayoutDirection
 import app.pars.engine.Security
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.Density
+import androidx.core.view.WindowCompat
 import app.pars.ui.BrowserScreen
+import app.pars.ui.C
+import app.pars.ui.Look
 import app.pars.ui.ParsTheme
 
 class MainActivity : ComponentActivity() {
@@ -36,10 +41,19 @@ class MainActivity : ComponentActivity() {
             if (missing.isEmpty()) cb(true) else { permCallback = cb; permLauncher.launch(missing.toTypedArray()) }
         }
         handleIntent(intent)
+        Look.load(browser.store)
+        browser.applyWebLook(Look.webTextScale, Look.webScheme)
         setContent {
-            ParsTheme {
+            val base = LocalDensity.current
+            // اندازه‌ی عناصر و متن را کاربر تنظیم می‌کند؛ متن مستقل از اندازه‌ی عناصر مقیاس می‌گیرد
+            CompositionLocalProvider(LocalDensity provides Density(base.density * Look.uiScale, base.fontScale * Look.textScale / Look.uiScale)) {
+              ParsTheme {
                 // رابط راست‌به‌چپ (فارسی)؛ آدرس‌ها خودشان LTR نمایش داده می‌شوند
                 CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
+                    LaunchedEffect(C.isDark) {
+                        val c = WindowCompat.getInsetsController(window, window.decorView)
+                        c.isAppearanceLightStatusBars = !C.isDark; c.isAppearanceLightNavigationBars = !C.isDark
+                    }
                     val priv = browser.active?.priv == true
                     LaunchedEffect(priv) {
                         // تب خصوصی: جلوگیری از اسکرین‌شات و پیش‌نمایش در لیست برنامه‌ها
@@ -47,6 +61,7 @@ class MainActivity : ComponentActivity() {
                     }
                     BrowserScreen(browser)
                 }
+              }
             }
         }
     }

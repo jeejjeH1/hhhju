@@ -40,7 +40,7 @@ fun TabSwitcher(b: Browser, onClose: () -> Unit) {
                         val a = abs(off).coerceIn(0f, 1f)
                         scaleX = 1f - .14f * a; scaleY = 1f - .14f * a; alpha = 1f - .45f * a
                         rotationY = off * -28f; cameraDistance = 14f * density
-                    }.clip(RoundedCornerShape(26.dp)).background(C.Surface2).border(1.5.dp, if (page == pager.currentPage) accent.copy(alpha = .8f) else C.Line, RoundedCornerShape(26.dp))
+                    }.clip(Rd(26f)).background(C.Surface2).border(1.5.dp, if (page == pager.currentPage) accent.copy(alpha = .8f) else C.Line, Rd(26f))
                         .clickable { b.select(tab.id); onClose() },
                 ) {
                     Row(Modifier.fillMaxWidth().padding(start = 16.dp, end = 8.dp, top = 8.dp, bottom = 4.dp), verticalAlignment = Alignment.CenterVertically) {

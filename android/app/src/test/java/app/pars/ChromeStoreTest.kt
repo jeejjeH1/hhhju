@@ -39,7 +39,9 @@ class ChromeStoreTest {
     }
 
     @Test fun convertDropsZipSlipEntries() {
-        val out = ChromeStore.convert(zip("manifest.json" to """{"name":"x","version":"1"}""", "../evil.txt" to "x", "a/b.js" to "1"), id)
+        val conv = ChromeStore.convert(zip("manifest.json" to """{"name":"x","version":"1","action":{"default_popup":"p.html"}}""", "../evil.txt" to "x", "a/b.js" to "1"), id)
+        val out = conv.xpi
+        assertEquals("p.html", conv.popup); assertEquals("$id@chromestore.pars", conv.geckoId)
         val names = mutableListOf<String>()
         ZipInputStream(out.inputStream()).use { z -> while (true) { names.add((z.nextEntry ?: break).name) } }
         assertEquals(listOf("manifest.json", "a/b.js"), names)

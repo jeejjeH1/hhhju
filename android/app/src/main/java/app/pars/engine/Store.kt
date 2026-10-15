@@ -27,6 +27,9 @@ class Store(ctx: Context) {
         get() = p.getInt("blocked", 0)
         set(v) = p.edit().putInt("blocked", v).apply()
 
+    fun str(key: String, def: String): String = p.getString("look_$key", def) ?: def
+    fun setStr(key: String, v: String) = p.edit().putString("look_$key", v).apply()
+
     fun bookmarks(): List<Bookmark> = readArr("bookmarks") { Bookmark(it.getString("u"), it.getString("t")) }
     fun toggleBookmark(url: String, title: String): Boolean {
         val l = bookmarks().toMutableList()

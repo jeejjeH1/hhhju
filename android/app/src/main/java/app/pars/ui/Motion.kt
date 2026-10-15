@@ -59,6 +59,7 @@ fun ParticleField(modifier: Modifier = Modifier, pulse: Int = 0, accent: Color =
         // هاله‌ی نفس‌کش
         val breath = 1f + .06f * sin(t * 1.6f)
         drawCircle(Brush.radialGradient(listOf(accent.copy(alpha = .34f * intro), Color.Transparent), center = c, radius = base * 2.1f * breath), radius = base * 2.1f * breath, center = c)
+        if (calm) return@Canvas
         val px = FloatArray(n); val py = FloatArray(n)
         for (i in 0 until n) {
             val ang = a0[i] + t * spd[i] * .6f

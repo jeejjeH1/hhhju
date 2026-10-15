@@ -27,7 +27,7 @@ import app.pars.engine.Browser
 import app.pars.engine.Security
 import org.mozilla.geckoview.GeckoView
 
-enum class Panel { None, Menu, Bookmarks, History, Extensions, Settings }
+enum class Panel { None, Menu, Bookmarks, History, Extensions, Settings, Look }
 
 @Composable
 fun BrowserScreen(b: Browser) {
@@ -50,23 +50,28 @@ fun BrowserScreen(b: Browser) {
 
     Box(Modifier.fillMaxSize().background(C.Bg)) {
         // موتور وب: یک GeckoView مشترک که سشن تب فعال را نشان می‌دهد
-        val barPad = if (b.fullscreen) 0.dp else 118.dp
+        val top = Look.barTop
+        val statusTop = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
+        val navBottom = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
+        val barH = if (b.fullscreen) 0.dp else 118.dp
+        val webPad = if (top) PaddingValues(top = statusTop + barH, bottom = navBottom) else PaddingValues(top = statusTop, bottom = navBottom + barH)
         AndroidView(
             factory = { ctx -> GeckoView(ctx).also { geckoRef[0] = it } },
             update = { v -> tab?.let { if (v.session !== it.session) { v.releaseSession(); v.setSession(it.session) } } },
-            modifier = Modifier.fillMaxSize().padding(bottom = barPad).statusBarsPadding(),
+            modifier = Modifier.fillMaxSize().padding(if (b.fullscreen) PaddingValues(0.dp) else webPad),
         )
         if (tab != null) {
             AnimatedVisibility(tab.isBlank, enter = fadeIn(tween(250)), exit = fadeOut(tween(350)) + scaleOut(targetScale = 1.08f, animationSpec = tween(350))) {
                 StartScreen(
                     isPrivate = tab.priv, bookmarks = remember(b.version) { b.store.bookmarks() }, blockedTotal = b.blockedTotal,
                     onSearch = { searching = true }, onOpen = { b.go(it) },
+                    padTop = if (top) statusTop + barH else statusTop, padBottom = if (top) navBottom else navBottom + barH,
                 )
             }
         }
         if (!b.fullscreen && tab != null) {
             BottomBar(
-                b, Modifier.align(Alignment.BottomCenter),
+                b, Modifier.align(if (top) Alignment.TopCenter else Alignment.BottomCenter), top,
                 onOmni = { searching = true },
                 onTabs = { geckoRef[0]?.capturePixels()?.accept({ bmp -> tab.thumb = bmp?.asImageBitmap() }, { }); switcher = true },
                 onMenu = { panel = Panel.Menu },
@@ -88,18 +93,18 @@ fun BrowserScreen(b: Browser) {
 private fun tabCount(b: Browser) = b.tabs.size
 
 @Composable
-private fun BottomBar(b: Browser, modifier: Modifier, onOmni: () -> Unit, onTabs: () -> Unit, onMenu: () -> Unit) {
+private fun BottomBar(b: Browser, modifier: Modifier, top: Boolean, onOmni: () -> Unit, onTabs: () -> Unit, onMenu: () -> Unit) {
     val t = b.active ?: return
     val bookmarked = remember(b.version, t.url) { b.store.isBookmarked(t.url) }
     val accent = if (t.priv) C.Cyan else C.Magenta
     Column(
-        modifier.fillMaxWidth().background(BarBg).navigationBarsPadding().progressLine(if (t.loading) t.progress / 100f else 0f).padding(horizontal = 12.dp, vertical = 8.dp),
+        modifier.fillMaxWidth().background(C.Bg.copy(alpha = .95f)).then(if (top) Modifier.statusBarsPadding() else Modifier.navigationBarsPadding()).progressLine(if (t.loading) t.progress / 100f else 0f).padding(horizontal = 12.dp, vertical = 8.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         // نوار آدرس (قرص) با نور چرخان هنگام بارگذاری
         Row(
-            Modifier.fillMaxWidth().height(48.dp).sweepGlow(t.loading, t.progress / 100f).clip(RoundedCornerShape(24.dp)).background(C.Surface2)
-                .border(1.dp, C.Line, RoundedCornerShape(24.dp)).clickable(onClick = onOmni).padding(horizontal = 14.dp),
+            Modifier.fillMaxWidth().height(48.dp).sweepGlow(t.loading, t.progress / 100f).clip(Rd(24f)).background(C.Surface2)
+                .border(1.dp, C.Line, Rd(24f)).clickable(onClick = onOmni).padding(horizontal = 14.dp),
             verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp),
         ) {
             val lockColor by animateColorAsState(when { t.isBlank -> C.Muted; t.secure -> C.Mint; t.url.startsWith("http://") -> C.Red; else -> C.Muted }, tween(400), label = "lock")
@@ -126,7 +131,6 @@ private fun BottomBar(b: Browser, modifier: Modifier, onOmni: () -> Unit, onTabs
     }
 }
 
-private val BarBg = Color(0xF2090812)
 
 @Composable
 fun ShieldBadge(count: Int, accent: Color) {
@@ -157,7 +161,7 @@ private fun BarButton(path: String, tint: Color = C.Muted, filled: Boolean = fal
 @Composable
 private fun TabsButton(count: Int, accent: Color, onClick: () -> Unit) {
     Box(Modifier.size(48.dp).clip(CircleShape).clickable(onClick = onClick), contentAlignment = Alignment.Center) {
-        Box(Modifier.size(26.dp).border(2.dp, accent, RoundedCornerShape(8.dp)), contentAlignment = Alignment.Center) {
+        Box(Modifier.size(26.dp).border(2.dp, accent, Rd(8f)), contentAlignment = Alignment.Center) {
             AnimatedContent(count, transitionSpec = { (scaleIn(spring(.5f, 500f)) + fadeIn()) togetherWith (scaleOut() + fadeOut()) }, label = "tabs") {
                 Text(it.toString(), color = C.Text, fontSize = 12.sp, fontWeight = FontWeight.Bold, fontFamily = F.Mono)
             }

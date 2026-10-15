@@ -17,6 +17,8 @@ import java.util.zip.ZipOutputStream
  * CRX را می‌گیرد → هدرش را برمی‌دارد → manifest را برای Firefox سازگار می‌کند → به‌صورت xpi نصب می‌شود.
  * بخش‌های بدون وابستگی به اندروید اینجاست تا با تست واحد بررسی شوند.
  */
+class Converted(val xpi: ByteArray, val geckoId: String, val popup: String)
+
 object ChromeStore {
     private const val MAX_CRX = 64 * 1024 * 1024
     private const val MAX_UNZIPPED = 256L * 1024 * 1024
@@ -69,7 +71,7 @@ object ChromeStore {
     }
 
     /** بازبسته‌بندی به xpi با manifest سازگار با Firefox. مسیرهای مشکوک (zip-slip) حذف می‌شوند. */
-    fun convert(zip: ByteArray, id: String): ByteArray {
+    fun convert(zip: ByteArray, id: String): Converted {
         val files = linkedMapOf<String, ByteArray>()
         var total = 0L
         ZipInputStream(ByteArrayInputStream(zip)).use { zin ->
@@ -88,7 +90,16 @@ object ChromeStore {
             val order = listOf("manifest.json") + files.keys.filter { it != "manifest.json" }
             for (n in order) { z.putNextEntry(ZipEntry(n)); z.write(files.getValue(n)); z.closeEntry() }
         }
-        return out.toByteArray()
+        return Converted(out.toByteArray(), geckoIdOf(fixed), popupOf(fixed))
+    }
+
+    fun geckoIdOf(json: String): String = JSONObject(json).getJSONObject("browser_specific_settings").getJSONObject("gecko").getString("id")
+
+    /** مسیر پاپ‌آپ دکمه‌ی نوار ابزار (برای باز کردن مستقیم اگر Gecko پاپ‌آپ نداد) */
+    fun popupOf(json: String): String {
+        val m = JSONObject(json)
+        for (k in listOf("action", "browser_action", "page_action")) m.optJSONObject(k)?.optString("default_popup")?.takeIf { it.isNotEmpty() }?.let { return it }
+        return ""
     }
 
     fun fixManifest(json: String, id: String): String {

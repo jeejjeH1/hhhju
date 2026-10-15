@@ -37,6 +37,8 @@ object G {
     const val Tabs = "M5 6h14a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1z"
     const val Find = "M10 4a6 6 0 1 0 0 12 6 6 0 1 0 0-12zM20 20l-5.5-5.5"
     const val Check = "M5 12l5 5L20 7"
+    const val Palette = "M12 3a9 9 0 1 0 0 18c1.5 0 2-1 1.5-2-.6-1.2.2-2.5 1.6-2.5H17a4 4 0 0 0 4-4c0-5-4-9.5-9-9.5zM7.5 11h.01M10 7.5h.01M14.5 7.5h.01"
+    const val Monitor = "M4 5h16v11H4zM9 20h6M12 16v4"
 }
 
 @Composable

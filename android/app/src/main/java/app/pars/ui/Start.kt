@@ -28,15 +28,15 @@ import kotlinx.coroutines.delay
 @Composable
 fun StartScreen(
     isPrivate: Boolean, bookmarks: List<Bookmark>, blockedTotal: Int,
-    onSearch: () -> Unit, onOpen: (String) -> Unit, modifier: Modifier = Modifier,
+    onSearch: () -> Unit, onOpen: (String) -> Unit, modifier: Modifier = Modifier, padTop: androidx.compose.ui.unit.Dp = 0.dp, padBottom: androidx.compose.ui.unit.Dp = 0.dp,
 ) {
     var pulse by remember { mutableIntStateOf(0) }
     val accent = if (isPrivate) C.Cyan else C.Magenta
     Box(modifier.fillMaxSize().background(C.Bg).pointerInput(Unit) { detectTapGestures { pulse++ } }) {
-        ParticleField(pulse = pulse, accent = accent)
-        Column(Modifier.fillMaxSize().statusBarsPadding().padding(horizontal = 24.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+        ParticleField(pulse = pulse, accent = accent, calm = !Look.particles)
+        Column(Modifier.fillMaxSize().padding(top = padTop, bottom = padBottom).padding(horizontal = 24.dp), horizontalAlignment = Alignment.CenterHorizontally) {
             Spacer(Modifier.weight(.13f))
-            Wordmark(if (isPrivate) "MASK" else "PARS", accent)
+            Wordmark(if (isPrivate) "MASK" else Look.wordmark, accent)
             Spacer(Modifier.height(10.dp))
             Rise(delayMs = 2000) {
                 Text(if (isPrivate) Str.privateTagline else Str.tagline, color = C.Muted, fontSize = 14.sp, textAlign = TextAlign.Center)
@@ -56,15 +56,15 @@ fun StartScreen(
             }
             Rise(delayMs = 2300, fromY = 90f) {
                 Row(
-                    Modifier.fillMaxWidth().height(56.dp).clip(RoundedCornerShape(28.dp)).background(C.Surface)
-                        .border(1.dp, C.Line, RoundedCornerShape(28.dp)).clickable(onClick = onSearch).padding(horizontal = 20.dp),
+                    Modifier.fillMaxWidth().height(56.dp).clip(Rd(28f)).background(C.Surface)
+                        .border(1.dp, C.Line, Rd(28f)).clickable(onClick = onSearch).padding(horizontal = 20.dp),
                     verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
                     Glyph(G.Search, accent, 22.dp)
                     Text(Str.searchHint, color = C.Muted, fontSize = 15.sp, modifier = Modifier.weight(1f))
                 }
             }
-            Spacer(Modifier.height(28.dp).navigationBarsPadding())
+            Spacer(Modifier.height(20.dp))
         }
     }
 }
@@ -77,7 +77,7 @@ private fun Wordmark(text: String, accent: androidx.compose.ui.graphics.Color) {
             LaunchedEffect(Unit) { delay(1750L + i * 110L); on = true }
             val p by animateFloatAsState(if (on) 1f else 0f, spring(.55f, 120f), label = "ch$i")
             Text(
-                ch.toString(), fontFamily = F.Display, fontSize = 54.sp, fontWeight = FontWeight.Bold,
+                ch.toString(), fontFamily = if (text.all { it.code < 128 }) F.Display else Look.font().family, fontSize = (54f * 4f / maxOf(4, text.length)).coerceAtLeast(24f).sp, fontWeight = FontWeight.Bold,
                 style = TextStyle(brush = if (accent == C.Cyan) C.Aurora else C.Neon),
                 modifier = Modifier.graphicsLayer { translationY = (1f - p) * 90f; alpha = p.coerceIn(0f, 1f); scaleX = .7f + .3f * p; scaleY = .7f + .3f * p; rotationZ = (1f - p) * -14f },
             )
@@ -108,8 +108,8 @@ private fun Chip(label: String, color: androidx.compose.ui.graphics.Color) {
 
 @Composable
 private fun Tile(b: Bookmark, onClick: () -> Unit) {
-    Column(Modifier.width(72.dp).clip(RoundedCornerShape(16.dp)).clickable(onClick = onClick).padding(6.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(6.dp)) {
-        Box(Modifier.size(48.dp).clip(RoundedCornerShape(15.dp)).background(C.Surface2).border(1.dp, C.Line, RoundedCornerShape(15.dp)), contentAlignment = Alignment.Center) {
+    Column(Modifier.width(72.dp).clip(Rd(16f)).clickable(onClick = onClick).padding(6.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        Box(Modifier.size(48.dp).clip(Rd(15f)).background(C.Surface2).border(1.dp, C.Line, Rd(15f)), contentAlignment = Alignment.Center) {
             Text((b.title.firstOrNull() ?: '•').uppercase(), fontFamily = F.Display, color = C.Magenta, fontSize = 18.sp)
         }
         Text(b.title, color = C.Muted, fontSize = 11.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)

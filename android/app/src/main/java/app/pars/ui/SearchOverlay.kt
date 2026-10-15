@@ -61,7 +61,7 @@ fun SearchOverlay(b: Browser, onClose: () -> Unit) {
                     LaunchedEffect(Unit) { delay(i * 40L); on = true }
                     val p by animateFloatAsState(if (on) 1f else 0f, spring(.7f, 260f), label = "s$i")
                     Row(
-                        Modifier.fillMaxWidth().graphicsLayer { alpha = p; translationY = (1 - p) * 40f }.clip(RoundedCornerShape(14.dp)).clickable { submit(url) }.padding(12.dp),
+                        Modifier.fillMaxWidth().graphicsLayer { alpha = p; translationY = (1 - p) * 40f }.clip(Rd(14f)).clickable { submit(url) }.padding(12.dp),
                         horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically,
                     ) {
                         Glyph(G.Clock, C.Magenta, 20.dp)
@@ -73,7 +73,7 @@ fun SearchOverlay(b: Browser, onClose: () -> Unit) {
                 }
             }
             Row(
-                Modifier.fillMaxWidth().height(56.dp).clip(RoundedCornerShape(28.dp)).background(C.Surface2).border(1.5.dp, Brush.linearGradient(listOf(C.Cyan, C.Magenta, C.Violet)), RoundedCornerShape(28.dp))
+                Modifier.fillMaxWidth().height(56.dp).clip(Rd(28f)).background(C.Surface2).border(1.5.dp, Brush.linearGradient(listOf(C.Cyan, C.Magenta, C.Violet)), Rd(28f))
                     .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) {}.padding(horizontal = 18.dp),
                 verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp),
             ) {

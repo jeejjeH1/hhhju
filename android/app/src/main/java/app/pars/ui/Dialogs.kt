@@ -37,7 +37,7 @@ fun Dialogs(b: Browser) {
             val accent = if (inst != null) C.Violet else if (dl != null) C.Amber else C.Cyan
             val pulse by rememberInfiniteTransition(label = "p").animateFloat(1f, 1.18f, infiniteRepeatable(tween(1100), RepeatMode.Reverse), label = "ps")
             Column(
-                Modifier.padding(24.dp).fillMaxWidth().clip(RoundedCornerShape(28.dp)).background(C.Surface).border(1.5.dp, accent.copy(alpha = .6f), RoundedCornerShape(28.dp)).padding(22.dp),
+                Modifier.padding(24.dp).fillMaxWidth().clip(Rd(28f)).background(C.Surface).border(1.5.dp, accent.copy(alpha = .6f), Rd(28f)).padding(22.dp),
                 horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(14.dp),
             ) {
                 Box(Modifier.size(64.dp).graphicsLayer { scaleX = pulse; scaleY = pulse }.clip(CircleShape).background(accent.copy(alpha = .14f)), contentAlignment = Alignment.Center) {
@@ -85,7 +85,7 @@ private fun Buttons(no: String, yes: String, accent: Color, onNo: () -> Unit, on
 @Composable
 fun ExtensionPopup(session: GeckoSession, onClose: () -> Unit) {
     Box(Modifier.fillMaxSize().background(Color(0xB0000000)).clickable(interactionSource = remember { MutableInteractionSource() }, indication = null, onClick = onClose), contentAlignment = Alignment.Center) {
-        Box(Modifier.padding(20.dp).fillMaxWidth().height(480.dp).clip(RoundedCornerShape(24.dp)).background(C.Surface).border(1.dp, C.Violet.copy(alpha = .6f), RoundedCornerShape(24.dp)).clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) {}) {
+        Box(Modifier.padding(20.dp).fillMaxWidth().height(480.dp).clip(Rd(24f)).background(C.Surface).border(1.dp, C.Violet.copy(alpha = .6f), Rd(24f)).clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) {}) {
             AndroidView({ ctx -> GeckoView(ctx).also { it.setSession(session) } }, Modifier.fillMaxSize())
         }
     }

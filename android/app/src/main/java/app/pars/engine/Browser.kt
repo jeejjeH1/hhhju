@@ -19,6 +19,7 @@ class Tab(val id: Int, val priv: Boolean, val session: GeckoSession) {
     var canForward by mutableStateOf(false)
     var secure by mutableStateOf(false)
     var blocked by mutableIntStateOf(0)
+    var desktop by mutableStateOf(false)
     var thumb by mutableStateOf<ImageBitmap?>(null)
     val isBlank get() = url.isEmpty() || url == "about:blank"
 }
@@ -54,6 +55,8 @@ class Browser(private val app: Context) {
     /** درخواست مجوز اندروید از Activity (دوربین/میکروفون/موقعیت) */
     var requestAndroidPerms: ((Array<String>, (Boolean) -> Unit) -> Unit)? = null
 
+    private val loadedExts = ArrayList<WebExtension>()
+    private var popupRequested = false
     private val actions = HashMap<String, WebExtension.Action>()   // اکشن دکمه‌ی نوار ابزار هر افزونه (با رفرش لیست پاک نمی‌شود)
     var extMessage by mutableStateOf("")
     private var nextId = 1
@@ -164,6 +167,7 @@ class Browser(private val app: Context) {
                 tab.blocked++; blockedTotal++; store.blockedTotal = blockedTotal
             }
         })
+        loadedExts.forEach { s.webExtensionController.setActionDelegate(it, actionDelegate) }
         s.permissionDelegate = object : PD {
             override fun onAndroidPermissionsRequest(session: GeckoSession, permissions: Array<out String>?, callback: PD.Callback) {
                 val req = requestAndroidPerms
@@ -237,15 +241,21 @@ class Browser(private val app: Context) {
         })
     }
 
+    private val actionDelegate = object : WebExtension.ActionDelegate {
+        override fun onBrowserAction(extension: WebExtension, session: GeckoSession?, action: WebExtension.Action) { updateAction(extension, action) }
+        override fun onTogglePopup(extension: WebExtension, action: WebExtension.Action): GeckoResult<GeckoSession>? = openPopup()
+        override fun onOpenPopup(extension: WebExtension, action: WebExtension.Action): GeckoResult<GeckoSession>? = openPopup()
+    }
+
+    /** delegate هم روی خود افزونه و هم روی هر تب ست می‌شود؛ بدون این، پاپ‌آپ بعضی افزونه‌ها هرگز باز نمی‌شود. */
     private fun hookActions(ext: WebExtension) {
-        ext.setActionDelegate(object : WebExtension.ActionDelegate {
-            override fun onBrowserAction(extension: WebExtension, session: GeckoSession?, action: WebExtension.Action) { updateAction(extension, action) }
-            override fun onTogglePopup(extension: WebExtension, action: WebExtension.Action): GeckoResult<GeckoSession>? = openPopup()
-            override fun onOpenPopup(extension: WebExtension, action: WebExtension.Action): GeckoResult<GeckoSession>? = openPopup()
-        })
+        loadedExts.add(ext)
+        ext.setActionDelegate(actionDelegate)
+        tabs.forEach { it.session.webExtensionController.setActionDelegate(ext, actionDelegate) }
     }
 
     private fun openPopup(): GeckoResult<GeckoSession> {
+        popupRequested = true
         val s = GeckoSession(); s.open(runtime); popup = s
         return GeckoResult.fromValue(s)
     }
@@ -254,7 +264,7 @@ class Browser(private val app: Context) {
 
     fun refreshExtensions() {
         runtime.webExtensionController.list().accept({ list ->
-            extensions.clear()
+            extensions.clear(); loadedExts.clear()
             list?.filter { !it.isBuiltIn }?.forEach { hookActions(it); extensions.add(ExtInfo(it)) }
         }, { extStatus = "خطا در خواندن اکستنشن‌ها" })
     }
@@ -280,8 +290,9 @@ class Browser(private val app: Context) {
         extStatus = "در حال دریافت از Chrome Store…"
         Thread {
             try {
-                val xpi = ChromeStore.convert(ChromeStore.crxToZip(ChromeStore.download(id)), id)
-                val f = java.io.File(app.cacheDir, "cws-$id.xpi").also { it.writeBytes(xpi) }
+                val conv = ChromeStore.convert(ChromeStore.crxToZip(ChromeStore.download(id)), id)
+                if (conv.popup.isNotEmpty()) store.setStr("popup:${conv.geckoId}", conv.popup)
+                val f = java.io.File(app.cacheDir, "cws-$id.xpi").also { it.writeBytes(conv.xpi) }
                 ui.post {
                     GeckoPreferenceController.setGeckoPref("xpinstall.signatures.required", false, GeckoPreferenceController.PREF_BRANCH_USER)
                         .accept({
@@ -302,14 +313,21 @@ class Browser(private val app: Context) {
         runtime.webExtensionController.uninstall(e.ext).accept({ refreshExtensions() }, { extStatus = "حذف نشد" })
     }
 
-    /** باز کردن افزونه: پاپ‌آپ دکمه‌ی نوار ابزار؛ اگر نداشت صفحه‌ی گزینه‌ها در تب جدید. */
+    /** باز کردن افزونه: پاپ‌آپ دکمه‌ی نوار ابزار؛ اگر باز نشد، گزینه‌ها یا خود صفحه‌ی پاپ‌آپ در تب جدید. */
     fun openExtension(e: ExtInfo) {
         val act = actions[e.id]
-        when {
-            act != null && act.enabled != false -> act.click()
-            e.optionsUrl != null -> openExtensionPage(e.optionsUrl!!)
-            else -> extStatus = "«${e.name}» دکمه‌ی نوار ابزار یا صفحه‌ی تنظیمات ندارد (ممکن است فقط در پس‌زمینه کار کند)."
-        }
+        popupRequested = false
+        act?.click()
+        ui.postDelayed({
+            if (popupRequested || popup != null) return@postDelayed
+            val base = e.ext.metaData.baseUrl
+            val pp = store.str("popup:${e.id}", "")
+            when {
+                base != null && pp.isNotEmpty() -> openExtensionPage(base.trimEnd('/') + "/" + pp.trimStart('/'))
+                e.optionsUrl != null -> openExtensionPage(e.optionsUrl!!)
+                else -> extStatus = "«${e.name}» پاپ‌آپ یا صفحه‌ی تنظیمات ندارد (اکشن نوار ابزار: ${if (act == null) "ثبت نشده" else "ثبت شده"}). ممکن است فقط در پس‌زمینه یا روی صفحات خاص کار کند."
+            }
+        }, if (act != null) 900L else 0L)
     }
 
     fun openExtensionPage(url: String) {
@@ -348,6 +366,22 @@ class Browser(private val app: Context) {
         }
         val f = java.io.File(app.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS), safe)
         f.writeBytes(bytes); return f.absolutePath
+    }
+
+    // ───────── ظاهر وب و حالت دسکتاپ ─────────
+    fun toggleDesktop() {
+        val t = active ?: return
+        t.desktop = !t.desktop
+        t.session.settings.setUserAgentMode(if (t.desktop) GeckoSessionSettings.USER_AGENT_MODE_DESKTOP else GeckoSessionSettings.USER_AGENT_MODE_MOBILE)
+        t.session.settings.setViewportMode(if (t.desktop) GeckoSessionSettings.VIEWPORT_MODE_DESKTOP else GeckoSessionSettings.VIEWPORT_MODE_MOBILE)
+        t.session.reload()
+    }
+
+    /** اندازه‌ی متن صفحات وب و روشن/تیره بودنشان */
+    fun applyWebLook(textScale: Float, scheme: String) {
+        runtime.settings.setAutomaticFontSizeAdjustment(false)
+        runtime.settings.setFontSizeFactor(textScale)
+        runtime.settings.setPreferredColorScheme(when (scheme) { "light" -> GeckoRuntimeSettings.COLOR_SCHEME_LIGHT; "dark" -> GeckoRuntimeSettings.COLOR_SCHEME_DARK; else -> GeckoRuntimeSettings.COLOR_SCHEME_SYSTEM })
     }
 
     // ───────── تنظیمات ─────────
