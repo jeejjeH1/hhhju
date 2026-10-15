@@ -4,6 +4,8 @@ import androidx.compose.animation.*
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
@@ -155,6 +157,16 @@ private fun ExtensionsPanel(b: Browser, go: (Panel) -> Unit) {
                 cursorBrush = SolidColor(C.Magenta), keyboardOptions = KeyboardOptions(imeAction = ImeAction.Go, keyboardType = KeyboardType.Uri), keyboardActions = KeyboardActions(onGo = { b.installExtension(input) }))
         }
         Text(Str.install, color = C.Bg, fontSize = 13.sp, modifier = Modifier.clip(CircleShape).background(C.Neon).clickable { b.installExtension(input) }.padding(horizontal = 14.dp, vertical = 6.dp))
+    }
+    Text("پرطرفدار (نصب با یک لمس)", color = C.Muted, fontSize = 11.sp, modifier = Modifier.padding(start = 24.dp, top = 12.dp, bottom = 6.dp))
+    Row(Modifier.horizontalScroll(rememberScrollState()).padding(horizontal = 16.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        listOf(
+            "uBlock Origin" to "ublock-origin", "Dark Reader" to "darkreader", "Bitwarden" to "bitwarden-password-manager",
+            "Privacy Badger" to "privacy-badger17", "SponsorBlock" to "sponsorblock", "Violentmonkey" to "violentmonkey",
+            "Decentraleyes" to "decentraleyes", "No cookie banners" to "istilldontcareaboutcookies",
+        ).forEach { (label, slug) ->
+            Text(label, color = C.Text, fontSize = 12.sp, maxLines = 1, modifier = Modifier.clip(CircleShape).background(C.Surface2).border(1.dp, C.Line, CircleShape).clickable { b.installExtension(slug) }.padding(horizontal = 12.dp, vertical = 8.dp))
+        }
     }
     if (b.extStatus.isNotEmpty()) Text(b.extStatus, color = C.Muted, fontSize = 12.sp, modifier = Modifier.padding(horizontal = 24.dp, vertical = 6.dp))
     if (b.extensions.isEmpty()) Empty(Str.noExt)

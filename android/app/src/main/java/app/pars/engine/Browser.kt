@@ -258,6 +258,12 @@ class Browser(private val app: Context) {
     }
 
     fun installExtension(input: String) {
+        // افزونه‌های Chrome Web Store روی موتور Firefox نصب نمی‌شوند؛ معادلش را در AMO پیدا می‌کنیم.
+        Security.chromeStoreName(input)?.let { name ->
+            extStatus = "این لینک مال Chrome Store است و روی این مرورگر نصب نمی‌شود. معادل Firefox آن را در یک تب جدید جستجو کردم؛ نام افزونه‌ی AMO را همین‌جا بنویس و «نصب» بزن."
+            newTab(Security.amoSearchUrl(name.ifBlank { "extensions" }))
+            return
+        }
         val url = Security.amoXpiUrl(input)
         if (url == null) { extStatus = "فقط لینک یا نام افزونه از addons.mozilla.org پذیرفته می‌شود."; return }
         extStatus = "در حال دریافت…"

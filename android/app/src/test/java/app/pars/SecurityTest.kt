@@ -20,4 +20,9 @@ class SecurityTest {
         assertNull(Security.amoXpiUrl("https://evil.example/x.xpi"))
         assertNull(Security.amoXpiUrl("http://addons.mozilla.org/en/firefox/addon/x/"))
     }
+    @Test fun chromeStoreLinks() {
+        assertEquals("ublock origin", Security.chromeStoreName("https://chromewebstore.google.com/detail/ublock-origin/cjpalhdlnbpafiamejdnhcphjbkeiagm"))
+        assertEquals("", Security.chromeStoreName("cjpalhdlnbpafiamejdnhcphjbkeiagm"))
+        assertNull(Security.chromeStoreName("ublock-origin"))
+    }
 }

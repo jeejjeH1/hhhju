@@ -53,4 +53,16 @@ object Security {
         if (Regex("""^[\w.@-]{2,60}$""").matches(t)) return "https://addons.mozilla.org/firefox/downloads/latest/$t/latest.xpi"
         return null
     }
+
+    /** لینک Chrome Web Store → نام افزونه (برای جستجوی معادلش در AMO). رشته‌ی خالی = شناسه‌ی بدون نام. null = لینک کروم‌استور نیست. */
+    fun chromeStoreName(input: String): String? {
+        val t = input.trim()
+        Regex("""^https://(?:chromewebstore\.google\.com/detail|chrome\.google\.com/webstore/detail)/([^/?#]+)""").find(t)?.let {
+            return java.net.URLDecoder.decode(it.groupValues[1], "UTF-8").replace('-', ' ')
+        }
+        if (Regex("""^https://(?:chromewebstore\.google\.com|chrome\.google\.com)/""").containsMatchIn(t) || Regex("""^[a-p]{32}$""").matches(t)) return ""
+        return null
+    }
+
+    fun amoSearchUrl(q: String) = "https://addons.mozilla.org/firefox/search/?q=" + URLEncoder.encode(q, "UTF-8")
 }
