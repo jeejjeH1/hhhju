@@ -8,5 +8,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - run: |
-          for u in https://nightly.maven.mozilla.org/maven2/org/mozilla/geckoview/ https://maven.mozilla.org/maven2/org/mozilla/geckoview/ ; do echo "== $u"; curl -sL $u | grep -oE 'geckoview[a-z0-9_-]*/' | sort -u | head -30; done
-          for a in geckoview-nightly-arm64-v8a geckoview-arm64-v8a; do for r in https://nightly.maven.mozilla.org/maven2 https://maven.mozilla.org/maven2; do echo "== $r $a"; curl -sL $r/org/mozilla/geckoview/$a/maven-metadata.xml | grep -oE '<(latest|release)>[^<]*' ; done; done
+          V=158.0.20261007201254
+          curl -sL -o g.aar https://maven.mozilla.org/maven2/org/mozilla/geckoview/geckoview-arm64-v8a/$V/geckoview-arm64-v8a-$V.aar
+          mkdir a && cd a && unzip -q ../g.aar 'assets/*' || true; ls assets | head
+          mkdir o && cd o && unzip -q ../assets/omni.ja 2>/dev/null || true
+          grep -rhoE 'MOZ_REQUIRE_SIGNING[^,;]{0,40}|MOZ_UPDATE_CHANNEL[^,;]{0,40}|MOZ_DEV_EDITION[^,;]{0,30}' modules/AppConstants.sys.mjs || echo noappconst
+          grep -rhoE 'xpinstall.signatures.required[^)]{0,40}' greprefs.js defaults 2>/dev/null | head -5 || true
+          true
