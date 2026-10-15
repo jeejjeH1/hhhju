@@ -12,6 +12,8 @@ import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Text
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -156,7 +158,7 @@ private fun ExtensionsPanel(b: Browser, go: (Panel) -> Unit) {
     }
     if (b.extStatus.isNotEmpty()) Text(b.extStatus, color = C.Muted, fontSize = 12.sp, modifier = Modifier.padding(horizontal = 24.dp, vertical = 6.dp))
     if (b.extensions.isEmpty()) Empty(Str.noExt)
-    LazyColumn(Modifier.weight(1f, fill = false)) {
+    LazyColumn(Modifier.heightIn(max = 340.dp)) {
         items(b.extensions) { e ->
             Row(Modifier.fillMaxWidth().clickable { b.clickExtension(e) }.padding(horizontal = 20.dp, vertical = 10.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 Glyph(G.Puzzle, C.Violet, 24.dp)
@@ -185,7 +187,7 @@ private fun Toggle(title: String, desc: String, on: Boolean, onChange: (Boolean)
 @Composable
 private fun SettingsPanel(b: Browser, go: (Panel) -> Unit) {
     Header(Str.settings) { go(Panel.Menu) }
-    LazyColumn(Modifier.weight(1f, fill = false)) {
+    LazyColumn(Modifier.heightIn(max = 480.dp)) {
         item {
             val v = b.version
             Toggle(Str.httpsOnly, Str.httpsOnlyDesc, b.store.httpsOnly) { b.setHttpsOnly(it) }

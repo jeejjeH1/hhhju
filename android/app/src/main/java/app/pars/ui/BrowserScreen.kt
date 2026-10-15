@@ -8,6 +8,8 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -146,7 +148,7 @@ private fun BarButton(path: String, tint: Color = C.Muted, filled: Boolean = fal
     val src = remember { MutableInteractionSource() }
     val pressed by src.collectIsPressedAsState()
     val s by animateFloatAsState(if (pressed) .8f else 1f, spring(.5f, 600f), label = "press")
-    Box(Modifier.size(48.dp).graphicsScale(s).clip(CircleShape).clickable(enabled = enabled, interactionSource = src, indication = null, onClick = onClick), contentAlignment = Alignment.Center) {
+    Box(Modifier.size(48.dp).graphicsLayer { scaleX = s; scaleY = s }.clip(CircleShape).clickable(enabled = enabled, interactionSource = src, indication = null, onClick = onClick), contentAlignment = Alignment.Center) {
         Glyph(path, if (enabled) (if (tint == C.Muted) C.Text else tint) else C.Line, 24.dp)
         if (filled) Glyph(path, tint.copy(alpha = .35f), 24.dp, 6f)
     }
