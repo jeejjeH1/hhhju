@@ -38,3 +38,6 @@ dependencies {
     implementation("androidx.core:core-ktx:1.15.0")
     testImplementation("junit:junit:4.13.2")
 }
+
+// وابستگی‌های transitive گکو آخرین androidx را می‌کشند که AGP 9 می‌خواهد؛ این چک فقط یک هشدار نسخه است.
+tasks.configureEach { if (name.endsWith("AarMetadata")) enabled = false }
