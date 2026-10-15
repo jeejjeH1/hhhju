@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="fa" dir="rtl" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; img-src data:;">
+<title>پارس</title>
+<link rel="stylesheet" href="ui.css">
+</head>
+<body>
+<div id="chrome">
+  <div id="tabs" role="tablist"></div>
+  <div id="toolbar">
+    <button id="back" class="ib" title="عقب (Alt+←)"></button>
+    <button id="fwd" class="ib" title="جلو (Alt+→)"></button>
+    <button id="reload" class="ib" title="بارگذاری مجدد (Ctrl+R)"></button>
+    <div id="omni">
+      <span id="sec" class="sec"></span>
+      <input id="url" dir="ltr" spellcheck="false" autocomplete="off" placeholder="جستجو یا وارد کردن نشانی" aria-label="نوار آدرس">
+      <span id="shield" class="shield" title="ردیاب‌های مسدودشده"></span>
+      <button id="star" class="ib sm" title="نشان کردن (Ctrl+D)"></button>
+      <div id="suggest" hidden></div>
+    </div>
+    <button id="extBtn" class="ib" title="اکستنشن‌ها"></button>
+    <button id="menuBtn" class="ib" title="منو"></button>
+  </div>
+  <div id="bar" hidden></div>
+</div>
+<div id="newtab" hidden></div>
+<div id="scrim" hidden></div>
+<aside id="drawer" hidden></aside>
+<div id="toast" hidden></div>
+<script src="ui.js"></script>
+</body>
+</html>

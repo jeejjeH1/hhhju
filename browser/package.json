@@ -1,0 +1,17 @@
+{
+  "name": "pars-browser",
+  "version": "0.1.0",
+  "description": "مرورگر امن و سبک با پشتیبانی از اکستنشن",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "test": "node test/smoke.js"
+  },
+  "license": "MIT",
+  "devDependencies": {
+    "electron": "^38.8.6"
+  },
+  "dependencies": {
+    "adm-zip": "^0.5.16"
+  }
+}
