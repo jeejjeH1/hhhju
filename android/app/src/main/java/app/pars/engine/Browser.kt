@@ -26,7 +26,8 @@ class Tab(val id: Int, val priv: Boolean, val session: GeckoSession) {
 class PermRequest(val origin: String, val kind: String, val answer: (Boolean) -> Unit)
 class InstallRequest(val name: String, val perms: List<String>, val origins: List<String>, val unverified: Boolean, val answer: (Boolean) -> Unit)
 class DownloadRequest(val name: String, val uri: String, val risky: Boolean)
-class ExtInfo(val ext: WebExtension, val action: WebExtension.Action?) {
+class ExtInfo(val ext: WebExtension) {
+    val optionsUrl: String? get() = ext.metaData.optionsPageUrl?.takeIf { it.isNotEmpty() }
     val id get() = ext.id
     val name get() = ext.metaData.name ?: ext.id
     val version get() = ext.metaData.version ?: ""
@@ -53,6 +54,8 @@ class Browser(private val app: Context) {
     /** درخواست مجوز اندروید از Activity (دوربین/میکروفون/موقعیت) */
     var requestAndroidPerms: ((Array<String>, (Boolean) -> Unit) -> Unit)? = null
 
+    private val actions = HashMap<String, WebExtension.Action>()   // اکشن دکمه‌ی نوار ابزار هر افزونه (با رفرش لیست پاک نمی‌شود)
+    var extMessage by mutableStateOf("")
     private var nextId = 1
     private var unverifiedNext = false
     private val ui = android.os.Handler(android.os.Looper.getMainLooper())
@@ -247,15 +250,12 @@ class Browser(private val app: Context) {
         return GeckoResult.fromValue(s)
     }
 
-    private fun updateAction(ext: WebExtension, action: WebExtension.Action) {
-        val i = extensions.indexOfFirst { it.id == ext.id }
-        if (i >= 0) extensions[i] = ExtInfo(ext, action)
-    }
+    private fun updateAction(ext: WebExtension, action: WebExtension.Action) { actions[ext.id] = action }
 
     fun refreshExtensions() {
         runtime.webExtensionController.list().accept({ list ->
             extensions.clear()
-            list?.filter { !it.isBuiltIn }?.forEach { hookActions(it); extensions.add(ExtInfo(it, null)) }
+            list?.filter { !it.isBuiltIn }?.forEach { hookActions(it); extensions.add(ExtInfo(it)) }
         }, { extStatus = "خطا در خواندن اکستنشن‌ها" })
     }
 
@@ -302,7 +302,53 @@ class Browser(private val app: Context) {
         runtime.webExtensionController.uninstall(e.ext).accept({ refreshExtensions() }, { extStatus = "حذف نشد" })
     }
 
-    fun clickExtension(e: ExtInfo) { e.action?.click() ?: run { extStatus = "این اکستنشن دکمه‌ی نوار ابزار ندارد." } }
+    /** باز کردن افزونه: پاپ‌آپ دکمه‌ی نوار ابزار؛ اگر نداشت صفحه‌ی گزینه‌ها در تب جدید. */
+    fun openExtension(e: ExtInfo) {
+        val act = actions[e.id]
+        when {
+            act != null && act.enabled != false -> act.click()
+            e.optionsUrl != null -> openExtensionPage(e.optionsUrl!!)
+            else -> extStatus = "«${e.name}» دکمه‌ی نوار ابزار یا صفحه‌ی تنظیمات ندارد (ممکن است فقط در پس‌زمینه کار کند)."
+        }
+    }
+
+    fun openExtensionPage(url: String) {
+        val t = newTab()                 // آدرس moz-extension:// فقط از اینجا (نه از ورودی کاربر) باز می‌شود
+        t.session.loadUri(url)
+    }
+
+    // ───────── ذخیره‌ی فایل افزونه ─────────
+    /** فایل کامل افزونه (CRX از Chrome Store یا XPI از AMO) را بدون نصب در Downloads/Pars ذخیره می‌کند. */
+    fun saveExtensionFile(input: String) {
+        val cws = ChromeStore.parseId(input)
+        val amo = if (cws == null) Security.amoXpiUrl(input) else null
+        if (cws == null && amo == null) { extStatus = "لینک Chrome Store یا addons.mozilla.org را وارد کن."; return }
+        extStatus = "در حال دانلود فایل افزونه…"
+        Thread {
+            try {
+                val (name, bytes) = if (cws != null) "$cws.crx" to ChromeStore.download(cws)
+                else Regex("/latest/([^/]+)/").find(amo!!)!!.groupValues[1].let { "$it.xpi" to ChromeStore.fetch(amo, listOf(".mozilla.org", ".mozilla.net", ".mozilla.com")) }
+                val where = saveToDownloads(name, bytes)
+                ui.post { extStatus = "ذخیره شد: $where (${bytes.size / 1024} کیلوبایت)" }
+            } catch (e: Exception) { ui.post { extStatus = "دانلود ناموفق: ${e.message ?: "خطا"}" } }
+        }.start()
+    }
+
+    private fun saveToDownloads(name: String, bytes: ByteArray): String {
+        val safe = name.replace(Regex("[^A-Za-z0-9._-]"), "_")
+        if (android.os.Build.VERSION.SDK_INT >= 29) {
+            val v = android.content.ContentValues().apply {
+                put(android.provider.MediaStore.Downloads.DISPLAY_NAME, safe)
+                put(android.provider.MediaStore.Downloads.MIME_TYPE, "application/octet-stream")
+                put(android.provider.MediaStore.Downloads.RELATIVE_PATH, Environment.DIRECTORY_DOWNLOADS + "/Pars")
+            }
+            val uri = app.contentResolver.insert(android.provider.MediaStore.Downloads.EXTERNAL_CONTENT_URI, v) ?: error("ذخیره ممکن نشد")
+            app.contentResolver.openOutputStream(uri)!!.use { it.write(bytes) }
+            return "Download/Pars/$safe"
+        }
+        val f = java.io.File(app.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS), safe)
+        f.writeBytes(bytes); return f.absolutePath
+    }
 
     // ───────── تنظیمات ─────────
     fun setHttpsOnly(on: Boolean) {

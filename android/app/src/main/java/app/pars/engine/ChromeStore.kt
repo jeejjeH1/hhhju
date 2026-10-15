@@ -32,17 +32,21 @@ object ChromeStore {
     /** دانلود CRX (فقط HTTPS و فقط دامنه‌ی گوگل). */
     fun download(id: String): ByteArray {
         require(idRe.matches(id)) { "شناسه‌ی نامعتبر" }
-        val url = "https://clients2.google.com/service/update2/crx?response=redirect&acceptformat=crx2,crx3&prodversion=130.0.0.0&x=" +
-            java.net.URLEncoder.encode("id=$id&uc", "UTF-8")
+        return fetch("https://clients2.google.com/service/update2/crx?response=redirect&acceptformat=crx2,crx3&prodversion=130.0.0.0&x=" +
+            java.net.URLEncoder.encode("id=$id&uc", "UTF-8"), listOf(".google.com", ".googleusercontent.com"))
+    }
+
+    /** دانلود امن: فقط HTTPS، ریدایرکت فقط به دامنه‌های مجاز، سقف حجم. */
+    fun fetch(url: String, allowedSuffixes: List<String>): ByteArray {
         var u = URL(url)
-        repeat(4) {
+        repeat(5) {
             val c = u.openConnection() as HttpURLConnection
             c.instanceFollowRedirects = false; c.connectTimeout = 15000; c.readTimeout = 30000
             c.setRequestProperty("User-Agent", "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36")
             val code = c.responseCode
             if (code in 300..399) {
                 val next = URL(u, c.getHeaderField("Location") ?: throw IllegalStateException("ریدایرکت نامعتبر"))
-                require(next.protocol == "https" && (next.host.endsWith(".google.com") || next.host.endsWith(".googleusercontent.com"))) { "میزبان غیرمجاز" }
+                require(next.protocol == "https" && allowedSuffixes.any { next.host.endsWith(it) }) { "میزبان غیرمجاز" }
                 u = next; return@repeat
             }
             check(code == 200) { "دانلود ناموفق (HTTP $code)" }

@@ -158,6 +158,8 @@ private fun ExtensionsPanel(b: Browser, go: (Panel) -> Unit) {
         }
         Text(Str.install, color = C.Bg, fontSize = 13.sp, modifier = Modifier.clip(CircleShape).background(C.Neon).clickable { b.installExtension(input) }.padding(horizontal = 14.dp, vertical = 6.dp))
     }
+    Text("فقط ذخیره‌ی فایل افزونه (CRX / XPI) در Downloads/Pars", color = C.Cyan, fontSize = 12.sp,
+        modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp).clip(RoundedCornerShape(10.dp)).clickable { b.saveExtensionFile(input) }.padding(8.dp))
     Text("پرطرفدار (نصب با یک لمس)", color = C.Muted, fontSize = 11.sp, modifier = Modifier.padding(start = 24.dp, top = 12.dp, bottom = 6.dp))
     Row(Modifier.horizontalScroll(rememberScrollState()).padding(horizontal = 16.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         listOf(
@@ -172,12 +174,13 @@ private fun ExtensionsPanel(b: Browser, go: (Panel) -> Unit) {
     if (b.extensions.isEmpty()) Empty(Str.noExt)
     LazyColumn(Modifier.heightIn(max = 340.dp)) {
         items(b.extensions) { e ->
-            Row(Modifier.fillMaxWidth().clickable { b.clickExtension(e) }.padding(horizontal = 20.dp, vertical = 10.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            Row(Modifier.fillMaxWidth().clickable { b.openExtension(e) }.padding(horizontal = 20.dp, vertical = 10.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 Glyph(G.Puzzle, C.Violet, 24.dp)
                 Column(Modifier.weight(1f)) {
                     Text(e.name, color = C.Text, fontSize = 14.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
                     Text("v${e.version} · ${e.description}", color = C.Muted, fontSize = 11.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 }
+                if (e.optionsUrl != null) Box(Modifier.size(36.dp).clip(CircleShape).clickable { b.openExtensionPage(e.optionsUrl!!) }, contentAlignment = Alignment.Center) { Glyph(G.Gear, C.Muted, 20.dp) }
                 Box(Modifier.size(36.dp).clip(CircleShape).clickable { b.removeExtension(e) }, contentAlignment = Alignment.Center) { Glyph(G.Trash, C.Muted, 20.dp) }
             }
         }
