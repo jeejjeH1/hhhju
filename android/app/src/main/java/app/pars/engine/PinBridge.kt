@@ -25,7 +25,7 @@ import java.util.UUID
  * «پین زنده»: افزونه‌ی داخلی (assets/pars-bridge) داخل صفحه‌ها اجرا می‌شود، با اپ پیام رد و بدل می‌کند و
  * مقدار بخش‌های پین‌شده را می‌خواند. به‌روزرسانی با یک سشن پنهان (با کوکی‌های همین مرورگر) انجام می‌شود.
  */
-class PinBridge(private val app: Context, private val runtime: GeckoRuntime, private val store: Store) {
+class PinBridge(private val app: Context, private val runtime: GeckoRuntime, private val store: Store, private val allSessions: () -> List<GeckoSession>) {
     val pins = mutableStateListOf<Pin>()
     var picking by mutableStateOf(false)
     var status by mutableStateOf("")
@@ -38,6 +38,7 @@ class PinBridge(private val app: Context, private val runtime: GeckoRuntime, pri
     private val ports = HashMap<GeckoSession, WebExtension.Port>()
     private val waiters = HashMap<GeckoSession, () -> Unit>()
     private var lastRefresh = 0L
+    private val attached = LinkedHashSet<GeckoSession>()
 
     private val delegate = object : WebExtension.MessageDelegate {
         override fun onConnect(port: WebExtension.Port) {
@@ -56,7 +57,14 @@ class PinBridge(private val app: Context, private val runtime: GeckoRuntime, pri
         pins.addAll(PinLogic.fromJson(store.str("pins", "[]")))
         runtime.webExtensionController.ensureBuiltIn("resource://android/assets/pars-bridge/", "bridge@pars.app").accept({ e ->
             ext = e; e?.setMessageDelegate(delegate, "pars")
+            (allSessions() + attached).distinct().forEach { attach(it) }
         }, { status = "افزونه‌ی داخلی بارگذاری نشد: ${it?.message ?: "خطا"}" })
+    }
+
+    /** پیام‌های اسکریپت داخل صفحه فقط از delegate سطح «سشن» می‌رسد؛ برای هر تب (و سشن پنهان) باید ست شود. */
+    fun attach(s: GeckoSession) {
+        attached.add(s)
+        ext?.let { s.webExtensionController.setMessageDelegate(it, delegate, "pars") }
     }
 
     private fun handle(s: GeckoSession, port: WebExtension.Port, m: JSONObject) {
@@ -99,7 +107,11 @@ class PinBridge(private val app: Context, private val runtime: GeckoRuntime, pri
     // ───────── API برای UI ─────────
     fun startPick(session: GeckoSession?): Boolean {
         val port = session?.let { ports[it] }
-        if (port == null) { status = "این صفحه هنوز آماده‌ی پین کردن نیست (افزونه‌ی داخلی بارگذاری نشده یا صفحه ناسازگار است)."; return false }
+        if (port == null) {
+            status = if (ext == null) "افزونه‌ی داخلی بارگذاری نشده است (وضعیت: ${status.ifEmpty { "نامشخص" }})."
+            else "افزونه‌ی داخلی لود شده ولی این صفحه به آن وصل نشده است (صفحه را یک بار تازه‌سازی کن و دوباره امتحان کن)."
+            return false
+        }
         picking = true; port.postMessage(JSONObject().put("cmd", "pick")); return true
     }
 
@@ -120,8 +132,9 @@ class PinBridge(private val app: Context, private val runtime: GeckoRuntime, pri
         val url = q.removeFirstOrNull() ?: run { refreshing = false; persist(); return }
         val s = GeckoSession(GeckoSessionSettings.Builder().usePrivateMode(false).build())
         s.open(runtime)
+        attach(s)
         var done = false
-        fun finish() { if (done) return; done = true; waiters.remove(s); ports.remove(s); s.close(); next(q) }
+        fun finish() { if (done) return; done = true; waiters.remove(s); ports.remove(s); attached.remove(s); s.close(); next(q) }
         waiters[s] = { ui.postDelayed({ finish() }, 300) }
         ui.postDelayed({ finish() }, 25000)
         s.loadUri(url)

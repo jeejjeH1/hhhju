@@ -84,7 +84,7 @@ class Browser(private val app: Context) {
         )
         setupExtensions()
         refreshExtensions()
-        pinBridge = PinBridge(app, runtime, store)
+        pinBridge = PinBridge(app, runtime, store) { tabs.map { it.session } }
         val saved = store.savedTabs()
         if (saved.isEmpty()) newTab() else saved.forEachIndexed { i, u -> newTab(u, select = i == saved.lastIndex) }
     }
@@ -170,6 +170,7 @@ class Browser(private val app: Context) {
             }
         })
         loadedExts.forEach { s.webExtensionController.setActionDelegate(it, actionDelegate) }
+        if (::pinBridge.isInitialized) pinBridge.attach(s)
         s.permissionDelegate = object : PD {
             override fun onAndroidPermissionsRequest(session: GeckoSession, permissions: Array<out String>?, callback: PD.Callback) {
                 val req = requestAndroidPerms
