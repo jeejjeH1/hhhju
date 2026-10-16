@@ -15,6 +15,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.TextStyle
@@ -67,7 +68,7 @@ fun RadarScreen(b: Browser, onClose: () -> Unit) {
         val fmt = SimpleDateFormat("yyyy-MM-dd", Locale.US)
         val keys = (6 downTo 0).map { fmt.format(Date(now - it * day)) }
         ctl.getTrackingDbEventsByDateRange(now - 7 * day, now).accept({ ev ->
-            val m = HashMap<String, Int>(); ev?.forEach { m[it.date.take(10)] = (m[it.date.take(10)] ?: 0) + it.count }
+            val m = HashMap<String, Int>(); ev?.forEach { e -> val d = (e.date ?: "").take(10); m[d] = (m[d] ?: 0) + e.count }
             week = keys.map { m[it] ?: 0 }
         }, { })
         ctl.sumAllTrackingDbEvents().accept({ total = it ?: 0 }, { })
@@ -173,7 +174,7 @@ private fun RadarCanvas(nodes: List<RadarNode>, selected: String?, secure: Boole
         // اسکنر
         val sweep = (t * 70f) % 360f
         // sweepGradient از زاویه‌ی 0 شروع می‌شود؛ با چرخش بوم آن را به زاویه‌ی اسکنر می‌بریم
-        androidx.compose.ui.graphics.drawscope.rotate(sweep, c) {
+        rotate(sweep, c) {
             drawCircle(Brush.sweepGradient(0f to Color.Transparent, .84f to Color.Transparent, 1f to centerColor.copy(alpha = .38f), center = c), maxR, c)
             drawLine(centerColor.copy(alpha = .7f), c, Offset(c.x + maxR, c.y), 2.dp.toPx())
         }
