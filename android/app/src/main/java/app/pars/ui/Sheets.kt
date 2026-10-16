@@ -242,13 +242,14 @@ private fun PinsPanel(b: Browser, go: (Panel) -> Unit) {
     Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         val canPick = b.active?.isBlank == false
         Row(
-            Modifier.weight(1f).clip(CircleShape).background(if (canPick) C.Neon else Brush.linearGradient(listOf(C.Line, C.Line))).clickable(enabled = canPick) { go(Panel.None); pb.startPick(b.active?.session) }.padding(vertical = 12.dp),
+            Modifier.weight(1f).clip(CircleShape).background(if (canPick) C.Neon else Brush.linearGradient(listOf(C.Line, C.Line))).clickable(enabled = canPick) { go(Panel.None); pb.startPick(b.active?.url) }.padding(vertical = 12.dp),
             horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically,
         ) { Glyph(G.Plus, C.Bg, 18.dp); Spacer(Modifier.width(6.dp)); Text("پین کردن از همین صفحه", color = C.Bg, fontSize = 13.sp, fontWeight = FontWeight.Bold) }
         Row(Modifier.clip(CircleShape).background(C.Surface2).border(1.dp, C.Line, CircleShape).clickable { pb.refreshAll() }.padding(horizontal = 14.dp, vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
             Glyph(G.Refresh, if (pb.refreshing) C.Amber else C.Text, 18.dp)
         }
     }
+    Text("تشخیص: ${pb.diag}", color = C.Muted, fontSize = 10.sp, fontFamily = F.Mono, modifier = Modifier.padding(horizontal = 24.dp, vertical = 4.dp))
     if (pb.status.isNotEmpty()) Text(pb.status, color = C.Amber, fontSize = 12.sp, modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp))
     if (pb.pins.isEmpty()) Empty("هنوز پینی نداری. یک صفحه‌ی مثلاً قیمت یا وضعیت سفارش را باز کن، «پین کردن» را بزن و روی همان بخش انگشت بگذار. بعد در ویجت صفحه‌ی اصلی می‌بینی‌اش.")
     LazyColumn(Modifier.heightIn(max = 420.dp)) {

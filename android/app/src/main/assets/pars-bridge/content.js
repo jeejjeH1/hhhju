@@ -2,19 +2,24 @@
 (() => {
   "use strict";
   if (window.top !== window) return;
-  let port = null, watched = [], picking = null, lastSent = "";
+  let port = null, watched = [], picking = null, lastSent = "", acked = false;
   const send = (m) => { try { if (port) port.postMessage(m); } catch (e) { /* قطع */ } };
+  const hello = () => send({ type: "hello", url: location.href, title: document.title, visible: document.visibilityState === "visible" });
 
   function connect() {
-    try { port = browser.runtime.connectNative("pars"); } catch (e) { return; }
+    try { port = browser.runtime.connect({ name: "page" }); } catch (e) { return; }
     port.onMessage.addListener(onCmd);
     port.onDisconnect.addListener(() => { port = null; });
-    send({ type: "hello", url: location.href, title: document.title });
+    hello();
+    let tries = 0;                       // اگر اپ هنوز آماده نبود، تا ۲۰ ثانیه دوباره سلام می‌دهیم
+    const iv = setInterval(() => { if (acked || ++tries > 10) clearInterval(iv); else hello(); }, 2000);
+    document.addEventListener("visibilitychange", () => send({ type: "vis", v: document.visibilityState === "visible" }));
   }
 
   function onCmd(c) {
     if (!c) return;
-    if (c.cmd === "watch") startWatch(c.pins || []);
+    if (c.cmd === "ack") acked = true;
+    else if (c.cmd === "watch") { acked = true; startWatch(c.pins || []); }
     else if (c.cmd === "pick") startPick();
     else if (c.cmd === "cancelPick") stopPick(false);
   }

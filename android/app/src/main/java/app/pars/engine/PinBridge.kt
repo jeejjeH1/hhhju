@@ -25,7 +25,7 @@ import java.util.UUID
  * «پین زنده»: افزونه‌ی داخلی (assets/pars-bridge) داخل صفحه‌ها اجرا می‌شود، با اپ پیام رد و بدل می‌کند و
  * مقدار بخش‌های پین‌شده را می‌خواند. به‌روزرسانی با یک سشن پنهان (با کوکی‌های همین مرورگر) انجام می‌شود.
  */
-class PinBridge(private val app: Context, private val runtime: GeckoRuntime, private val store: Store, private val allSessions: () -> List<GeckoSession>) {
+class PinBridge(private val app: Context, private val runtime: GeckoRuntime, private val store: Store) {
     val pins = mutableStateListOf<Pin>()
     var picking by mutableStateOf(false)
     var status by mutableStateOf("")
@@ -35,49 +35,53 @@ class PinBridge(private val app: Context, private val runtime: GeckoRuntime, pri
 
     private val ui = Handler(Looper.getMainLooper())
     private var ext: WebExtension? = null
-    private val ports = HashMap<GeckoSession, WebExtension.Port>()
-    private val waiters = HashMap<GeckoSession, () -> Unit>()
+    private class Page(var url: String, var visible: Boolean)
+    private var bg: WebExtension.Port? = null
+    private val pages = HashMap<Int, Page>()
+    private val waiters = HashMap<String, () -> Unit>()
+    var diag by mutableStateOf("افزونه: ✗ · پل: ✗ · صفحات: 0")
     private var lastRefresh = 0L
-    private val attached = LinkedHashSet<GeckoSession>()
 
     private val delegate = object : WebExtension.MessageDelegate {
         override fun onConnect(port: WebExtension.Port) {
-            val s = port.sender.session
-            // فقط اسکریپت صفحه‌ی اصلی؛ هر چیز دیگر رد می‌شود
-            if (s == null || port.name != "pars" || port.sender.environmentType != WebExtension.MessageSender.ENV_TYPE_CONTENT_SCRIPT || !port.sender.isTopLevel) { port.disconnect(); return }
-            ports[s] = port
+            // فقط صفحه‌ی پس‌زمینه‌ی خود افزونه‌ی داخلی
+            if (port.sender.environmentType != WebExtension.MessageSender.ENV_TYPE_EXTENSION) { port.disconnect(); return }
+            bg = port; updateDiag()
             port.setDelegate(object : WebExtension.PortDelegate {
-                override fun onPortMessage(message: Any, port: WebExtension.Port) { (message as? JSONObject)?.let { handle(s, port, it) } }
-                override fun onDisconnect(port: WebExtension.Port) { if (ports[s] === port) ports.remove(s) }
+                override fun onPortMessage(message: Any, port: WebExtension.Port) { (message as? JSONObject)?.let { handle(it) } }
+                override fun onDisconnect(port: WebExtension.Port) { if (bg === port) { bg = null; pages.clear(); updateDiag() } }
             })
         }
     }
+
+    private fun updateDiag() { diag = "افزونه: ${if (ext != null) "✓" else "✗"} · پل: ${if (bg != null) "✓" else "✗"} · صفحات: ${pages.size}" }
+    private fun send(pid: Int, o: JSONObject) { try { bg?.postMessage(o.put("pid", pid)) } catch (_: Exception) { } }
 
     init {
         pins.addAll(PinLogic.fromJson(store.str("pins", "[]")))
         runtime.webExtensionController.ensureBuiltIn("resource://android/assets/pars-bridge/", "bridge@pars.app").accept({ e ->
             ext = e; e?.setMessageDelegate(delegate, "pars")
-            (allSessions() + attached).distinct().forEach { attach(it) }
+            updateDiag()
         }, { status = "افزونه‌ی داخلی بارگذاری نشد: ${it?.message ?: "خطا"}" })
     }
 
-    /** پیام‌های اسکریپت داخل صفحه فقط از delegate سطح «سشن» می‌رسد؛ برای هر تب (و سشن پنهان) باید ست شود. */
-    fun attach(s: GeckoSession) {
-        attached.add(s)
-        ext?.let { s.webExtensionController.setMessageDelegate(it, delegate, "pars") }
-    }
-
-    private fun handle(s: GeckoSession, port: WebExtension.Port, m: JSONObject) {
+    private fun handle(m: JSONObject) {
+        val pid = m.optInt("pid", -1)
         when (m.optString("type")) {
             "hello" -> {
-                val url = PinLogic.normalizeUrl(m.optString("url"))
-                val mine = pins.filter { PinLogic.normalizeUrl(it.url) == url }
-                if (mine.isNotEmpty()) port.postMessage(JSONObject().put("cmd", "watch").put("pins", JSONArray().also { a -> mine.forEach { a.put(JSONObject().put("id", it.id).put("sel", it.sel)) } }))
+                val url = m.optString("url")
+                pages[pid] = Page(url, m.optBoolean("visible")); updateDiag()
+                send(pid, JSONObject().put("cmd", "ack"))
+                val n = PinLogic.normalizeUrl(url)
+                val mine = pins.filter { PinLogic.normalizeUrl(it.url) == n }
+                if (mine.isNotEmpty()) send(pid, JSONObject().put("cmd", "watch").put("pins", JSONArray().also { a -> mine.forEach { a.put(JSONObject().put("id", it.id).put("sel", it.sel)) } }))
             }
+            "vis" -> pages[pid]?.visible = m.optBoolean("v")
+            "gone" -> { pages.remove(pid); updateDiag() }
             "values" -> {
                 val a = m.optJSONArray("values") ?: return
                 for (i in 0 until a.length()) { val o = a.optJSONObject(i) ?: continue; applyValue(o.optString("id"), o.optString("text"), o.optBoolean("ok")) }
-                persist(); waiters[s]?.invoke()
+                persist(); pages[pid]?.let { waiters[PinLogic.normalizeUrl(it.url)]?.invoke() }
             }
             "picked" -> onPicked(m)
             "pickCancelled" -> picking = false
@@ -105,17 +109,21 @@ class PinBridge(private val app: Context, private val runtime: GeckoRuntime, pri
     private fun persist() { store.setStr("pins", PinLogic.toJson(pins)); PinsWidget.refreshAll(app) }
 
     // ───────── API برای UI ─────────
-    fun startPick(session: GeckoSession?): Boolean {
-        val port = session?.let { ports[it] }
-        if (port == null) {
-            status = if (ext == null) "افزونه‌ی داخلی بارگذاری نشده است (وضعیت: ${status.ifEmpty { "نامشخص" }})."
-            else "افزونه‌ی داخلی لود شده ولی این صفحه به آن وصل نشده است (صفحه را یک بار تازه‌سازی کن و دوباره امتحان کن)."
-            return false
+    fun startPick(url: String?): Boolean {
+        val n = url?.let { PinLogic.normalizeUrl(it) }
+        val hit = pages.entries.firstOrNull { it.value.visible && PinLogic.normalizeUrl(it.value.url) == n } ?: pages.entries.firstOrNull { PinLogic.normalizeUrl(it.value.url) == n }
+        if (hit == null) {
+            status = when {
+                ext == null -> "افزونه‌ی داخلی بارگذاری نشده است."
+                bg == null -> "افزونه لود شده ولی به اپ وصل نیست (پل ✗). برنامه را کامل ببند و دوباره باز کن."
+                else -> "پل وصل است ولی این صفحه گزارش نداده (صفحات: ${pages.size}). صفحه را تازه‌سازی کن و دوباره امتحان کن."
+            }
+            updateDiag(); return false
         }
-        picking = true; port.postMessage(JSONObject().put("cmd", "pick")); return true
+        picking = true; status = ""; send(hit.key, JSONObject().put("cmd", "pick")); return true
     }
 
-    fun cancelPick(session: GeckoSession?) { picking = false; session?.let { ports[it] }?.postMessage(JSONObject().put("cmd", "cancelPick")) }
+    fun cancelPick() { picking = false; send(-1, JSONObject().put("cmd", "cancelPick")) }
 
     fun remove(id: String) { pins.removeAll { it.id == id }; persist() }
 
@@ -132,10 +140,9 @@ class PinBridge(private val app: Context, private val runtime: GeckoRuntime, pri
         val url = q.removeFirstOrNull() ?: run { refreshing = false; persist(); return }
         val s = GeckoSession(GeckoSessionSettings.Builder().usePrivateMode(false).build())
         s.open(runtime)
-        attach(s)
         var done = false
-        fun finish() { if (done) return; done = true; waiters.remove(s); ports.remove(s); attached.remove(s); s.close(); next(q) }
-        waiters[s] = { ui.postDelayed({ finish() }, 300) }
+        fun finish() { if (done) return; done = true; waiters.remove(url); s.close(); next(q) }
+        waiters[url] = { ui.postDelayed({ finish() }, 300) }
         ui.postDelayed({ finish() }, 25000)
         s.loadUri(url)
     }

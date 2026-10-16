@@ -5,6 +5,7 @@
   "description": "پل داخلی پارس: انتخاب بخشی از صفحه و پایش تغییرات آن (فقط روی همین دستگاه).",
   "browser_specific_settings": { "gecko": { "id": "bridge@pars.app" } },
   "permissions": ["nativeMessaging", "geckoViewAddons", "<all_urls>"],
+  "background": { "scripts": ["background.js"], "persistent": true },
   "content_scripts": [
     { "matches": ["https://*/*", "http://*/*"], "js": ["content.js"], "run_at": "document_idle", "all_frames": false }
   ]

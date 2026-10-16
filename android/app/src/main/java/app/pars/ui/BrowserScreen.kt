@@ -95,7 +95,7 @@ fun BrowserScreen(b: Browser) {
                 verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp),
             ) {
                 Text("روی بخش دلخواه صفحه بزن", color = C.Text, fontSize = 13.sp)
-                Box(Modifier.size(40.dp).clip(CircleShape).clickable { b.pinBridge.cancelPick(b.active?.session) }, contentAlignment = Alignment.Center) { Glyph(G.Close, C.Muted, 18.dp) }
+                Box(Modifier.size(40.dp).clip(CircleShape).clickable { b.pinBridge.cancelPick() }, contentAlignment = Alignment.Center) { Glyph(G.Close, C.Muted, 18.dp) }
             }
         }
         Sheets(b, panel, onPanel = { panel = it })
