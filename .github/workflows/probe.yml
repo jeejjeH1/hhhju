@@ -1,0 +1,17 @@
+name: probe
+on:
+  push:
+    branches: [claude/secure-browser-extension-support-gqv56o]
+    paths: ['.github/workflows/probe.yml']
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          V=158.0.20261007201254
+          curl -sL -o g.aar https://maven.mozilla.org/maven2/org/mozilla/geckoview/geckoview-arm64-v8a/$V/geckoview-arm64-v8a-$V.aar
+          mkdir x && cd x && unzip -q ../g.aar classes.jar
+          echo "== CBC"; javap -cp classes.jar org.mozilla.geckoview.ContentBlockingController | grep -E "public" | cut -c1-200
+          echo "== RT"; javap -cp classes.jar org.mozilla.geckoview.GeckoRuntime | grep -iE "ContentBlocking|StorageController" | cut -c1-200
+          echo "== CB"; javap -constants -cp classes.jar 'org.mozilla.geckoview.ContentBlocking$AntiTracking' | grep -E "static" | head -3
+          true
