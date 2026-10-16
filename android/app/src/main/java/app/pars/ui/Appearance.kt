@@ -73,7 +73,7 @@ fun AppearancePanel(b: Browser, go: (Panel) -> Unit) {
         Switch("نوار آدرس در بالا", "پیش‌فرض: پایین صفحه (راحت‌تر برای شست)", Look.barTop) { Look.barTop = it; save() }
         Switch("ذرات و شاک‌ویو در صفحه‌ی شروع", "خاموش = پس‌زمینه‌ی ساده و کم‌مصرف‌تر", Look.particles) { Look.particles = it; save() }
         Row(Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            Text("نوشته‌ی صفحه‌ی شروع", color = C.Text, fontSize = 14.sp, modifier = Modifier.weight(1f))
+            Text("نوشته‌ی صفحه‌ی شروع (خالی = لوگوی پارس)", color = C.Text, fontSize = 14.sp, modifier = Modifier.weight(1f))
             BasicTextField(
                 Look.wordmark, { Look.wordmark = it.take(14); save() }, Modifier.width(130.dp).clip(Rd(12f)).background(C.Surface2).border(1.dp, C.Line, Rd(12f)).padding(10.dp), singleLine = true,
                 textStyle = TextStyle(color = C.Text, fontSize = 14.sp, textAlign = TextAlign.Center), cursorBrush = SolidColor(C.Magenta),

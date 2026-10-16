@@ -37,11 +37,12 @@ import kotlinx.coroutines.delay
 
 @Composable
 fun Sheets(b: Browser, panel: Panel, onPanel: (Panel) -> Unit) {
-    AnimatedVisibility(panel != Panel.None, enter = fadeIn(tween(180)), exit = fadeOut(tween(160))) {
+    val sheet = panel != Panel.None && panel != Panel.Radar
+    AnimatedVisibility(sheet, enter = fadeIn(tween(180)), exit = fadeOut(tween(160))) {
         Box(Modifier.fillMaxSize().background(Color(0xAA000000)).clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) { onPanel(Panel.None) })
     }
     AnimatedVisibility(
-        panel != Panel.None, Modifier.fillMaxSize(),
+        sheet, Modifier.fillMaxSize(),
         enter = slideInVertically(spring(.8f, 320f)) { it } + fadeIn(), exit = slideOutVertically(tween(180)) { it } + fadeOut(),
     ) {
         Box(Modifier.fillMaxSize(), contentAlignment = Alignment.BottomCenter) {
@@ -58,7 +59,7 @@ fun Sheets(b: Browser, panel: Panel, onPanel: (Panel) -> Unit) {
                     Panel.Extensions -> ExtensionsPanel(b, onPanel)
                     Panel.Settings -> SettingsPanel(b, onPanel)
                     Panel.Look -> AppearancePanel(b, onPanel)
-                    Panel.None -> {}
+                    Panel.None, Panel.Radar -> {}
                 }
             }
         }
@@ -79,6 +80,7 @@ private fun MenuPanel(b: Browser, go: (Panel) -> Unit) {
         Triple(G.Mask, Str.privateTab, C.Cyan) to { b.newTab(priv = true); go(Panel.None) },
         Triple(G.Star, Str.bookmarks, C.Amber) to { go(Panel.Bookmarks) },
         Triple(G.Clock, Str.history, C.Magenta) to { go(Panel.History) },
+        Triple(G.Shield, "رادار", C.Mint) to { go(Panel.Radar) },
         Triple(G.Puzzle, Str.extensions, C.Violet) to { go(Panel.Extensions) },
         Triple(G.Palette, "ظاهر", C.Magenta) to { go(Panel.Look) },
         Triple(G.Monitor, if (b.active?.desktop == true) "نسخه‌ی موبایل" else "نسخه‌ی دسکتاپ", C.Cyan) to { b.toggleDesktop(); go(Panel.None) },

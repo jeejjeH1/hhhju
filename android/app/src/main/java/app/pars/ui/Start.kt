@@ -35,8 +35,10 @@ fun StartScreen(
     Box(modifier.fillMaxSize().background(C.Bg).pointerInput(Unit) { detectTapGestures { pulse++ } }) {
         ParticleField(pulse = pulse, accent = accent, calm = !Look.particles)
         Column(Modifier.fillMaxSize().padding(top = padTop, bottom = padBottom).padding(horizontal = 24.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-            Spacer(Modifier.weight(.13f))
-            Wordmark(if (isPrivate) "MASK" else Look.wordmark, accent)
+            Spacer(Modifier.weight(.07f))
+            LogoMark()
+            Spacer(Modifier.height(6.dp))
+            if (isPrivate) Wordmark("MASK", accent) else if (Look.wordmark.isBlank()) WordmarkImage() else Wordmark(Look.wordmark, accent)
             Spacer(Modifier.height(10.dp))
             Rise(delayMs = 2000) {
                 Text(if (isPrivate) Str.privateTagline else Str.tagline, color = C.Muted, fontSize = 14.sp, textAlign = TextAlign.Center)
@@ -67,6 +69,24 @@ fun StartScreen(
             Spacer(Modifier.height(20.dp))
         }
     }
+}
+
+/** آیکون لوگو: با فنر و چرخش وارد می‌شود و بعد آرام شناور می‌ماند. */
+@Composable
+private fun LogoMark() {
+    var on by remember { mutableStateOf(false) }
+    LaunchedEffect(Unit) { delay(1500); on = true }
+    val p by animateFloatAsState(if (on) 1f else 0f, spring(.5f, 90f), label = "logo")
+    val float by rememberInfiniteTransition(label = "fl").animateFloat(-5f, 5f, infiniteRepeatable(tween(2600, easing = FastOutSlowInEasing), RepeatMode.Reverse), label = "f")
+    androidx.compose.foundation.Image(
+        androidx.compose.ui.res.painterResource(app.pars.R.drawable.logo_icon), null,
+        Modifier.size(96.dp).graphicsLayer { scaleX = .3f + .7f * p; scaleY = .3f + .7f * p; alpha = p.coerceIn(0f, 1f); rotationZ = (1f - p) * -25f; translationY = float },
+    )
+}
+
+@Composable
+private fun WordmarkImage() = Rise(delayMs = 1900) {
+    androidx.compose.foundation.Image(androidx.compose.ui.res.painterResource(app.pars.R.drawable.logo_wordmark), "پارس", Modifier.height(96.dp))
 }
 
 @Composable

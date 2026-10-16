@@ -102,7 +102,7 @@ object Look {
     var round by mutableFloatStateOf(1f)          // گردی گوشه‌ها
     var barTop by mutableStateOf(false)           // نوار آدرس بالا یا پایین
     var particles by mutableStateOf(true)         // ذرات صفحه‌ی شروع
-    var wordmark by mutableStateOf("PARS")        // نوشته‌ی بزرگ صفحه‌ی شروع
+    var wordmark by mutableStateOf("")        // نوشته‌ی بزرگ صفحه‌ی شروع
     var webTextScale by mutableFloatStateOf(1f)   // اندازه‌ی متن صفحات وب
     var webScheme by mutableStateOf("system")     // system / light / dark
 
@@ -115,7 +115,7 @@ object Look {
         uiScale = s.str("uiScale", "1").toFloatOrNull()?.coerceIn(.75f, 1.4f) ?: 1f
         round = s.str("round", "1").toFloatOrNull()?.coerceIn(0f, 1.8f) ?: 1f
         barTop = s.str("barTop", "0") == "1"; particles = s.str("particles", "1") == "1"
-        wordmark = s.str("wordmark", "PARS").take(14).ifBlank { "PARS" }
+        wordmark = s.str("wordmark", "").take(14)
         webTextScale = s.str("webText", "1").toFloatOrNull()?.coerceIn(.5f, 2f) ?: 1f
         webScheme = s.str("webScheme", "system")
         refresh()
@@ -132,7 +132,7 @@ object Look {
 
     fun reset() {
         themeId = "neon"; accent = null; fontId = "default"; textScale = 1f; uiScale = 1f; round = 1f
-        barTop = false; particles = true; wordmark = "PARS"; webTextScale = 1f; webScheme = "system"; refresh()
+        barTop = false; particles = true; wordmark = ""; webTextScale = 1f; webScheme = "system"; refresh()
     }
 }
 

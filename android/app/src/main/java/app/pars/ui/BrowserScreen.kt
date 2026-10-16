@@ -27,7 +27,7 @@ import app.pars.engine.Browser
 import app.pars.engine.Security
 import org.mozilla.geckoview.GeckoView
 
-enum class Panel { None, Menu, Bookmarks, History, Extensions, Settings, Look }
+enum class Panel { None, Menu, Bookmarks, History, Extensions, Settings, Look, Radar }
 
 @Composable
 fun BrowserScreen(b: Browser) {
@@ -75,6 +75,7 @@ fun BrowserScreen(b: Browser) {
                 onOmni = { searching = true },
                 onTabs = { geckoRef[0]?.capturePixels()?.accept({ bmp -> tab.thumb = bmp?.asImageBitmap() }, { }); switcher = true },
                 onMenu = { panel = Panel.Menu },
+                onRadar = { panel = Panel.Radar },
             )
         }
 
@@ -83,6 +84,9 @@ fun BrowserScreen(b: Browser) {
         }
         AnimatedVisibility(switcher, enter = fadeIn(tween(200)) + scaleIn(spring(.75f, 300f), initialScale = .85f), exit = fadeOut(tween(150)) + scaleOut(targetScale = .9f)) {
             TabSwitcher(b, onClose = { switcher = false })
+        }
+        AnimatedVisibility(panel == Panel.Radar, enter = fadeIn(tween(200)) + scaleIn(spring(.8f, 300f), initialScale = .9f), exit = fadeOut(tween(150)) + scaleOut(targetScale = .95f)) {
+            RadarScreen(b, onClose = { panel = Panel.None })
         }
         Sheets(b, panel, onPanel = { panel = it })
         b.popup?.let { ext -> ExtensionPopup(ext) { b.popup?.close(); b.popup = null } }
@@ -93,7 +97,7 @@ fun BrowserScreen(b: Browser) {
 private fun tabCount(b: Browser) = b.tabs.size
 
 @Composable
-private fun BottomBar(b: Browser, modifier: Modifier, top: Boolean, onOmni: () -> Unit, onTabs: () -> Unit, onMenu: () -> Unit) {
+private fun BottomBar(b: Browser, modifier: Modifier, top: Boolean, onOmni: () -> Unit, onTabs: () -> Unit, onMenu: () -> Unit, onRadar: () -> Unit) {
     val t = b.active ?: return
     val bookmarked = remember(b.version, t.url) { b.store.isBookmarked(t.url) }
     val accent = if (t.priv) C.Cyan else C.Magenta
@@ -114,7 +118,7 @@ private fun BottomBar(b: Browser, modifier: Modifier, top: Boolean, onOmni: () -
                 color = if (t.isBlank) C.Muted else C.Text, fontSize = 14.sp, fontFamily = if (t.isBlank) null else F.Mono,
                 maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f),
             )
-            ShieldBadge(t.blocked, accent)
+            if (!t.isBlank) ShieldBadge(t.blocked, accent, onRadar)
             if (t.priv) Glyph(G.Mask, C.Cyan, 20.dp)
             Box(Modifier.size(32.dp).clip(CircleShape).clickable { if (t.loading) t.session.stop() else t.session.reload() }, contentAlignment = Alignment.Center) {
                 val rot by animateFloatAsState(if (t.loading) 90f else 0f, spring(.6f, 200f), label = "rl")
@@ -133,16 +137,15 @@ private fun BottomBar(b: Browser, modifier: Modifier, top: Boolean, onOmni: () -
 
 
 @Composable
-fun ShieldBadge(count: Int, accent: Color) {
-    AnimatedVisibility(count > 0, enter = scaleIn(spring(.5f, 400f)) + fadeIn(), exit = scaleOut() + fadeOut()) {
-        Row(
-            Modifier.clip(CircleShape).background(accent.copy(alpha = .14f)).padding(horizontal = 8.dp, vertical = 3.dp),
-            verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp),
-        ) {
-            Glyph(G.Shield, accent, 14.dp)
-            AnimatedContent(count, transitionSpec = { (slideInVertically { it } + fadeIn()) togetherWith (slideOutVertically { -it } + fadeOut()) }, label = "cnt") {
-                Text(it.toString(), color = accent, fontSize = 12.sp, fontWeight = FontWeight.Bold, fontFamily = F.Mono)
-            }
+fun ShieldBadge(count: Int, accent: Color, onClick: () -> Unit) {
+    val tint = if (count > 0) accent else C.Muted
+    Row(
+        Modifier.clip(CircleShape).background(tint.copy(alpha = .14f)).clickable(onClick = onClick).padding(horizontal = 8.dp, vertical = 4.dp),
+        verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp),
+    ) {
+        Glyph(G.Shield, tint, 14.dp)
+        AnimatedContent(count, transitionSpec = { (slideInVertically { it } + fadeIn()) togetherWith (slideOutVertically { -it } + fadeOut()) }, label = "cnt") {
+            Text(it.toString(), color = tint, fontSize = 12.sp, fontWeight = FontWeight.Bold, fontFamily = F.Mono)
         }
     }
 }
