@@ -28,6 +28,7 @@ import app.pars.ui.ParsTheme
 
 class MainActivity : ComponentActivity() {
     private val browser get() = (application as ParsApp).browser
+    private val notifLauncher = registerForActivityResult(ActivityResultContracts.RequestPermission()) { }
     private var permCallback: ((Boolean) -> Unit)? = null
     private val permLauncher = registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { r ->
         permCallback?.invoke(r.values.all { it }); permCallback = null
@@ -40,6 +41,7 @@ class MainActivity : ComponentActivity() {
             val missing = perms.filter { checkSelfPermission(it) != PackageManager.PERMISSION_GRANTED }
             if (missing.isEmpty()) cb(true) else { permCallback = cb; permLauncher.launch(missing.toTypedArray()) }
         }
+        browser.pinBridge.onNeedNotifPerm = { if (android.os.Build.VERSION.SDK_INT >= 33 && checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) notifLauncher.launch(Manifest.permission.POST_NOTIFICATIONS) }
         handleIntent(intent)
         Look.load(browser.store)
         browser.applyWebLook(Look.webTextScale, Look.webScheme)
@@ -75,6 +77,11 @@ class MainActivity : ComponentActivity() {
     private fun handleIntent(i: Intent?) {
         val u = i?.dataString ?: return
         if (i.action == Intent.ACTION_VIEW && Security.isSafeNavigationUrl(u)) browser.newTab(u)
+    }
+
+    override fun onStart() {
+        super.onStart()
+        browser.pinBridge.refreshIfStale(if (intent?.getBooleanExtra("refresh", false) == true) 0L else 15 * 60_000L)
     }
 
     override fun onStop() {

@@ -27,7 +27,7 @@ import app.pars.engine.Browser
 import app.pars.engine.Security
 import org.mozilla.geckoview.GeckoView
 
-enum class Panel { None, Menu, Bookmarks, History, Extensions, Settings, Look, Radar }
+enum class Panel { None, Menu, Bookmarks, History, Extensions, Settings, Look, Radar, Pins }
 
 @Composable
 fun BrowserScreen(b: Browser) {
@@ -48,6 +48,7 @@ fun BrowserScreen(b: Browser) {
         }
     }
 
+    LaunchedEffect(b.pinBridge.pinEvent) { if (b.pinBridge.pinEvent > 0) panel = Panel.Pins }
     Box(Modifier.fillMaxSize().background(C.Bg)) {
         // موتور وب: یک GeckoView مشترک که سشن تب فعال را نشان می‌دهد
         val top = Look.barTop
@@ -87,6 +88,15 @@ fun BrowserScreen(b: Browser) {
         }
         AnimatedVisibility(panel == Panel.Radar, enter = fadeIn(tween(200)) + scaleIn(spring(.8f, 300f), initialScale = .9f), exit = fadeOut(tween(150)) + scaleOut(targetScale = .95f)) {
             RadarScreen(b, onClose = { panel = Panel.None })
+        }
+        if (b.pinBridge.picking) {
+            Row(
+                Modifier.align(Alignment.TopCenter).statusBarsPadding().padding(top = 70.dp, start = 16.dp, end = 16.dp).clip(CircleShape).background(C.Surface).border(1.dp, C.Magenta, CircleShape).padding(start = 18.dp, end = 6.dp),
+                verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp),
+            ) {
+                Text("روی بخش دلخواه صفحه بزن", color = C.Text, fontSize = 13.sp)
+                Box(Modifier.size(40.dp).clip(CircleShape).clickable { b.pinBridge.cancelPick(b.active?.session) }, contentAlignment = Alignment.Center) { Glyph(G.Close, C.Muted, 18.dp) }
+            }
         }
         Sheets(b, panel, onPanel = { panel = it })
         b.popup?.let { ext -> ExtensionPopup(ext) { b.popup?.close(); b.popup = null } }

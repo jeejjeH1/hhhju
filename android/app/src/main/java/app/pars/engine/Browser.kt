@@ -50,6 +50,7 @@ class Browser(private val app: Context) {
     var extStatus by mutableStateOf("")
     var popup by mutableStateOf<GeckoSession?>(null)
     val extensions = mutableStateListOf<ExtInfo>()
+    lateinit var pinBridge: PinBridge
     var version by mutableIntStateOf(0)      // با هر تغییر نشان‌ها/تاریخچه/تنظیمات بالا می‌رود تا UI تازه شود
 
     /** درخواست مجوز اندروید از Activity (دوربین/میکروفون/موقعیت) */
@@ -83,6 +84,7 @@ class Browser(private val app: Context) {
         )
         setupExtensions()
         refreshExtensions()
+        pinBridge = PinBridge(app, runtime, store)
         val saved = store.savedTabs()
         if (saved.isEmpty()) newTab() else saved.forEachIndexed { i, u -> newTab(u, select = i == saved.lastIndex) }
     }

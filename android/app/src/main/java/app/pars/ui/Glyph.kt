@@ -38,6 +38,8 @@ object G {
     const val Find = "M10 4a6 6 0 1 0 0 12 6 6 0 1 0 0-12zM20 20l-5.5-5.5"
     const val Check = "M5 12l5 5L20 7"
     const val Palette = "M12 3a9 9 0 1 0 0 18c1.5 0 2-1 1.5-2-.6-1.2.2-2.5 1.6-2.5H17a4 4 0 0 0 4-4c0-5-4-9.5-9-9.5zM7.5 11h.01M10 7.5h.01M14.5 7.5h.01"
+    const val Pin = "M12 21s-6-5.5-6-10a6 6 0 1 1 12 0c0 4.5-6 10-6 10zM12 8a3 3 0 1 0 0 6 3 3 0 1 0 0-6z"
+    const val Refresh = "M20 12a8 8 0 1 1-2.4-5.7M20 4v5h-5"
     const val Monitor = "M4 5h16v11H4zM9 20h6M12 16v4"
 }
 

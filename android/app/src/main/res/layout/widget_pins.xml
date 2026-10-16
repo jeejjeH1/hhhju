@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/w_root"
+    android:layout_width="match_parent" android:layout_height="match_parent"
+    android:layoutDirection="rtl" android:textDirection="anyRtl">
+    <ImageView android:id="@+id/w_bg" android:layout_width="match_parent" android:layout_height="match_parent"
+        android:scaleType="fitXY" android:src="@drawable/widget_bg" android:contentDescription="@null" />
+    <LinearLayout android:layout_width="match_parent" android:layout_height="match_parent"
+        android:orientation="vertical" android:padding="14dp">
+        <TextView android:id="@+id/w_head" android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:text="پین‌های زنده" android:textSize="12sp" android:textStyle="bold" />
+        <LinearLayout android:id="@+id/w_r1" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:layout_marginTop="6dp">
+            <TextView android:id="@+id/w_t1" android:layout_width="match_parent" android:layout_height="wrap_content" android:textSize="10sp" android:maxLines="1" android:ellipsize="end" />
+            <TextView android:id="@+id/w_v1" android:layout_width="match_parent" android:layout_height="wrap_content" android:textSize="16sp" android:textStyle="bold" android:maxLines="1" android:ellipsize="end" />
+        </LinearLayout>
+        <LinearLayout android:id="@+id/w_r2" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:layout_marginTop="6dp">
+            <TextView android:id="@+id/w_t2" android:layout_width="match_parent" android:layout_height="wrap_content" android:textSize="10sp" android:maxLines="1" android:ellipsize="end" />
+            <TextView android:id="@+id/w_v2" android:layout_width="match_parent" android:layout_height="wrap_content" android:textSize="16sp" android:textStyle="bold" android:maxLines="1" android:ellipsize="end" />
+        </LinearLayout>
+        <LinearLayout android:id="@+id/w_r3" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:layout_marginTop="6dp">
+            <TextView android:id="@+id/w_t3" android:layout_width="match_parent" android:layout_height="wrap_content" android:textSize="10sp" android:maxLines="1" android:ellipsize="end" />
+            <TextView android:id="@+id/w_v3" android:layout_width="match_parent" android:layout_height="wrap_content" android:textSize="16sp" android:textStyle="bold" android:maxLines="1" android:ellipsize="end" />
+        </LinearLayout>
+        <LinearLayout android:id="@+id/w_r4" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:layout_marginTop="6dp">
+            <TextView android:id="@+id/w_t4" android:layout_width="match_parent" android:layout_height="wrap_content" android:textSize="10sp" android:maxLines="1" android:ellipsize="end" />
+            <TextView android:id="@+id/w_v4" android:layout_width="match_parent" android:layout_height="wrap_content" android:textSize="16sp" android:textStyle="bold" android:maxLines="1" android:ellipsize="end" />
+        </LinearLayout>
+        <TextView android:id="@+id/w_foot" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="8dp" android:textSize="10sp" />
+    </LinearLayout>
+</FrameLayout>

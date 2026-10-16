@@ -20,7 +20,9 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.TextStyle
@@ -31,6 +33,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import app.pars.engine.Browser
+import app.pars.engine.PinLogic
 import app.pars.engine.Security
 import app.pars.engine.Str
 import kotlinx.coroutines.delay
@@ -59,6 +62,7 @@ fun Sheets(b: Browser, panel: Panel, onPanel: (Panel) -> Unit) {
                     Panel.Extensions -> ExtensionsPanel(b, onPanel)
                     Panel.Settings -> SettingsPanel(b, onPanel)
                     Panel.Look -> AppearancePanel(b, onPanel)
+                    Panel.Pins -> PinsPanel(b, onPanel)
                     Panel.None, Panel.Radar -> {}
                 }
             }
@@ -81,6 +85,7 @@ private fun MenuPanel(b: Browser, go: (Panel) -> Unit) {
         Triple(G.Star, Str.bookmarks, C.Amber) to { go(Panel.Bookmarks) },
         Triple(G.Clock, Str.history, C.Magenta) to { go(Panel.History) },
         Triple(G.Shield, "رادار", C.Mint) to { go(Panel.Radar) },
+        Triple(G.Pin, "پین‌ها", C.Amber) to { go(Panel.Pins) },
         Triple(G.Puzzle, Str.extensions, C.Violet) to { go(Panel.Extensions) },
         Triple(G.Palette, "ظاهر", C.Magenta) to { go(Panel.Look) },
         Triple(G.Monitor, if (b.active?.desktop == true) "نسخه‌ی موبایل" else "نسخه‌ی دسکتاپ", C.Cyan) to { b.toggleDesktop(); go(Panel.None) },
@@ -105,6 +110,7 @@ private fun MenuPanel(b: Browser, go: (Panel) -> Unit) {
                         Text(label, color = C.Text, fontSize = 12.sp, maxLines = 1)
                     }
                 }
+                repeat(3 - row.size) { Spacer(Modifier.weight(1f)) }
             }
         }
     }
@@ -227,4 +233,41 @@ private fun SettingsPanel(b: Browser, go: (Panel) -> Unit) {
             if (v < 0) Spacer(Modifier)
         }
     }
+}
+
+@Composable
+private fun PinsPanel(b: Browser, go: (Panel) -> Unit) {
+    val pb = b.pinBridge
+    Header("پین‌های زنده") { go(Panel.Menu) }
+    Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        val canPick = b.active?.isBlank == false
+        Row(
+            Modifier.weight(1f).clip(CircleShape).background(if (canPick) C.Neon else Brush.linearGradient(listOf(C.Line, C.Line))).clickable(enabled = canPick) { go(Panel.None); pb.startPick(b.active?.session) }.padding(vertical = 12.dp),
+            horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically,
+        ) { Glyph(G.Plus, C.Bg, 18.dp); Spacer(Modifier.width(6.dp)); Text("پین کردن از همین صفحه", color = C.Bg, fontSize = 13.sp, fontWeight = FontWeight.Bold) }
+        Row(Modifier.clip(CircleShape).background(C.Surface2).border(1.dp, C.Line, CircleShape).clickable { pb.refreshAll() }.padding(horizontal = 14.dp, vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
+            Glyph(G.Refresh, if (pb.refreshing) C.Amber else C.Text, 18.dp)
+        }
+    }
+    if (pb.status.isNotEmpty()) Text(pb.status, color = C.Amber, fontSize = 12.sp, modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp))
+    if (pb.pins.isEmpty()) Empty("هنوز پینی نداری. یک صفحه‌ی مثلاً قیمت یا وضعیت سفارش را باز کن، «پین کردن» را بزن و روی همان بخش انگشت بگذار. بعد در ویجت صفحه‌ی اصلی می‌بینی‌اش.")
+    LazyColumn(Modifier.heightIn(max = 420.dp)) {
+        items(pb.pins.toList(), key = { it.id }) { p ->
+            val now = System.currentTimeMillis()
+            Row(Modifier.fillMaxWidth().clickable { go(Panel.None); b.newTab(p.url) }.padding(horizontal = 20.dp, vertical = 10.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                Glyph(G.Pin, if (p.ok) C.Amber else C.Red, 22.dp)
+                Column(Modifier.weight(1f)) {
+                    Text(p.title, color = C.Muted, fontSize = 11.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    Text(p.value, color = if (p.ok) C.Text else C.Amber, fontSize = 17.sp, fontWeight = FontWeight.Bold, maxLines = 2, overflow = TextOverflow.Ellipsis)
+                    Text(
+                        if (!p.ok) "⚠ بخش در صفحه پیدا نشد (طراحی سایت عوض شده؟ دوباره پین کن)"
+                        else if (p.prev.isNotEmpty()) "قبلاً: ${p.prev} · تغییر ${PinLogic.ago(p.changed, now)}" else "بررسی ${PinLogic.ago(p.checked, now)}",
+                        color = C.Muted, fontSize = 11.sp, maxLines = 2, overflow = TextOverflow.Ellipsis,
+                    )
+                }
+                Box(Modifier.size(36.dp).clip(CircleShape).clickable { pb.remove(p.id) }, contentAlignment = Alignment.Center) { Glyph(G.Trash, C.Muted, 20.dp) }
+            }
+        }
+    }
+    Text("به‌روزرسانی: وقتی برنامه را باز می‌کنی یا دکمه‌ی تازه‌سازی را می‌زنی. پین‌ها با نشست واردشده‌ی همین مرورگر خوانده می‌شوند و داده‌ها فقط روی گوشی می‌مانند.", color = C.Muted, fontSize = 11.sp, modifier = Modifier.padding(horizontal = 24.dp, vertical = 10.dp))
 }
