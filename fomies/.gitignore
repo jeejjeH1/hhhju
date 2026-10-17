@@ -1,0 +1,4 @@
+node_modules/
+out/parts/
+out/stills/
+out/*_noaudio.mp4
